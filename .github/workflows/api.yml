@@ -10,10 +10,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Docker
-        uses: docker/setup-docker@v2
-        with:
-          registry: ghcr.io
       - run: docker build -t ghcr.io/gessfred/sequel-api:latest -f ./api/Dockerfile ./api
       - run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login ghcr.io -u gessfred --password-stdin
       - run: docker push ghcr.io/gessfred/sequel-api:latest
