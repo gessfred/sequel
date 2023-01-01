@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sequel-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sequel-api
+  template:
+    metadata:
+      labels:
+        app: sequel-api
+    spec:
+      containers:
+        - name: sequel-api
+          image: ghcr.io/gessfred/sequel-api:latest
+          imagePullPolicy: Always
+          ports:
+          - containerPort: 8080
+          env:
+            - name: MONGODB_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: sequel-master-secrets
+                  key: MONGODB_CONNECTION_STRING
