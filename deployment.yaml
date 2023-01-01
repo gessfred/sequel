@@ -25,4 +25,4 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: sequel-master-secrets
-                  key: MONGODB_CONNECTION_STRING
+                  key: mongodb_connection_string
