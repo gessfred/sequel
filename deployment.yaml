@@ -12,6 +12,8 @@ spec:
       labels:
         app: sequel-api
     spec:
+      imagePullSecrets:
+      - name: github-regcred
       containers:
         - name: sequel-api
           image: ghcr.io/gessfred/sequel-api:latest
