@@ -7,11 +7,43 @@ import (
 	"net/http"
 	"os"
 	"time"
+  "net/smtp"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+func sendEmail(recipient string, subject string, body string) {
+  // SMTP configuration
+  username := "fredd.gess@gmail.com"
+  password := os.Getenv("SENDINBLUE_SMTP_PASSWORD")
+  host := "smtp-relay.sendinblue.com"
+  port := "587"
+
+  // Sender and receiver
+  from := "fredd.gess@gmail.com"
+  to := []string{
+    recipient,
+  }
+
+  // Build the message
+  message := fmt.Sprintf("From: %s\r\n", from)
+  message += fmt.Sprintf("To: %s\r\n", to)
+  message += fmt.Sprintf("Subject: %s\r\n", subject)
+  message += fmt.Sprintf("\r\n%s\r\n", body)
+
+  // Authentication.
+  auth := smtp.PlainAuth("", username, password, host)
+
+  // Send email
+  err := smtp.SendMail(host+":"+port, auth, from, to, []byte(message))
+  if err != nil {
+    fmt.Println(err)
+    return
+  }
+  
+}
 
 type version struct {
 	Timestamp time.Time `bson:"timestamp"`
@@ -52,6 +84,12 @@ func main() {
 		fmt.Fprintf(w, "Latest version: %s\n", latest.Version)
 	})
 
+  http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) { 
+    recipient := r.URL.Query().Get("user_email")
+    sendEmail(recipient, "OTP", "<code>1234</code>")
+  })
+
 	// Start the HTTP server
 	log.Fatal(http.ListenAndServe(":8080", nil))
+  
 }
