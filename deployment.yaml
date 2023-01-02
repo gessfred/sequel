@@ -26,3 +26,8 @@ spec:
                 secretKeyRef:
                   name: sequel-master-secrets
                   key: mongodb_connection_string
+            - name: SENDINBLUE_SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sequel-master-secrets
+                  key: sendinblue_smtp_password
