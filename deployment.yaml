@@ -31,6 +31,8 @@ spec:
                 secretKeyRef:
                   name: sequel-master-secrets
                   key: sendinblue_smtp_password
+            - name: ENVIRONMENT 
+              value: 'prod'
 ---
 apiVersion: v1
 kind: Service 
