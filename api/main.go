@@ -9,7 +9,9 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"github.com/rs/cors"
 )
 
 type Result struct {
@@ -138,28 +140,16 @@ func queryHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	fmt.Println("starting server...")
-	// PostgreSQL connection string
 
-	// Open a connection to the database
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
+	router := mux.NewRouter()
 
-	defer db.Close()
-
-	// Test the connection
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
-	http.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "0.0.0")
 	})
 
-	http.HandleFunc("/query", queryHandler)
+	router.HandleFunc("/query", queryHandler)
 	// Start the HTTP server
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	c := cors.Default().Handler(router)
+	log.Fatal(http.ListenAndServe(":8080", c))
 
 }

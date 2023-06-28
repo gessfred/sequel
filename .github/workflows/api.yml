@@ -10,8 +10,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - run: docker build -t ghcr.io/gessfred/sequel-api:latest .
-      - run: docker build -t "ghcr.io/gessfred/sequel-api:${GITHUB_SHA}" .
+      - run: docker build -t ghcr.io/gessfred/sequel-api:latest ./api
+      - run: docker build -t "ghcr.io/gessfred/sequel-api:${GITHUB_SHA}" ./api
       - run: echo ${{ secrets.REGISTRY_TOKEN }} | docker login ghcr.io -u USERNAME --password-stdin
       - run: docker push ghcr.io/gessfred/sequel-api:latest
       - run: docker push "ghcr.io/gessfred/sequel-api:${GITHUB_SHA}"
