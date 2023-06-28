@@ -59,8 +59,12 @@ func executeQuery(db *sql.DB, query string) ([]string, [][]interface{}, error) {
 
 		// Create a slice to hold the current row's values
 		rowValues := make([]interface{}, len(columns))
-		for i := range columns {
-			rowValues[i] = values[i]
+		for i, col := range values {
+			if value, ok := col.([]byte); ok {
+				rowValues[i] = string(value)
+			} else {
+				rowValues[i] = col
+			}
 		}
 
 		// Append the row to the result rows
@@ -72,22 +76,6 @@ func executeQuery(db *sql.DB, query string) ([]string, [][]interface{}, error) {
 	}
 
 	return columns, resultRows, nil
-}
-
-func printResult(columns []string, rows [][]interface{}) {
-	// Print the column names
-	for _, column := range columns {
-		fmt.Printf("%s\t", column)
-	}
-	fmt.Println()
-
-	// Print the rows
-	for _, row := range rows {
-		for _, val := range row {
-			fmt.Printf("%v\t", val)
-		}
-		fmt.Println()
-	}
 }
 
 func queryHandler(w http.ResponseWriter, r *http.Request) {
@@ -130,9 +118,6 @@ func queryHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Println(columns)
-	fmt.Println(rows)
 
 	// Create a Result struct
 	result := Result{
