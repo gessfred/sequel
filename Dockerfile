@@ -6,6 +6,8 @@ WORKDIR /app
 # Copy the source code to the working directory
 COPY . .
 
+
+
 # Build the Go server
 RUN go build -o server .
 
