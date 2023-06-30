@@ -52,3 +52,12 @@
 .sidebar {
   display: flex;
 }
+
+.notebook-toolbar-container {
+  padding: 4px;
+  display: flex;
+}
+
+.notebook-toolbar-element {
+  margin-right: 4px;
+}

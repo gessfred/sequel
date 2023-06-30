@@ -112,15 +112,16 @@ function QueryEditor({api, query, setQuery, result, setResult, onCtrlEnter}) {
   )
 }
 
-function NotebookToolbar({newCell}) {
+function NotebookToolbar({newCell, metadata}) {
   return (
-    <div>
+    <div className='notebook-toolbar-container'>
+      <span className='notebook-toolbar-element'>{metadata.datasource}</span>
       <button onClick={newCell}>Add cell</button>
     </div>
   )
 }
 
-function Notebook({api}) {
+function Notebook({api, datasource, show}) {
   const [cells, setCells] = useState({"@root": {"id": "@root", "query": "", "result": {}, "position": 0}})
   const updateCell = (cell, property) => value => {
     setCells(prev => Object.assign({}, prev, {
@@ -133,9 +134,13 @@ function Notebook({api}) {
       "query": "", "result": {}, "position": 1, "id": newCellID
     }}))
   }
+  if(!show) return <span />
   return (
     <div>
-      <NotebookToolbar newCell={addCell} />
+      <NotebookToolbar 
+        newCell={addCell}
+        metadata={{datasource: datasource}}
+      />
       {Object.values(cells).map((cell, idx) => <QueryEditor 
         api={api}
         query={cell.query}
@@ -148,12 +153,72 @@ function Notebook({api}) {
   )
 }
 
+function DatasourceCard({name, open}) {
+  return (
+    <div>
+      {name}
+      <button onClick={open}>Open</button>
+    </div>
+  )
+}
+
+function MainMenu({show, open, createDataSource}) {
+  if(!show) return <span />
+  return (
+    <div>
+      <DatasourceCard
+        open={open}
+        name='postresql'
+      />
+      <button onClick={createDataSource}>Create</button>
+    </div>
+  )
+}
+
+function LabelInput({label, onChange}) {
+  return (
+    <div>
+      <label>{label}</label>
+      <input type='text' />
+    </div>
+  )
+}
+
+function DatasourceEditor({show, create}) {
+  if(!show) return <span></span>
+  return (
+    <div>
+      <LabelInput label="Name" />
+      <LabelInput label="Connection String" />
+      <LabelInput label="Engine" />
+      <button>Test</button>
+      <button onClick={create}>Create</button>
+    </div>
+  )
+}
+
+function Header({navToMainMenu}) {
+  return (
+    <div>
+      {navToMainMenu && <button onClick={navToMainMenu}>Return</button>}
+      <span>Sequel</span>
+    </div>
+  )
+}
+
+
 function App() {
+  const [page, setPage] = useState({id: 'main'})
   const api = API("http://localhost:8080")
   return (
     <div className='App'>
-      <h1>Sequel</h1>
-      <Notebook api={api} />
+      <Header navToMainMenu={page === 'main' ? null : () => setPage('main')} />
+      <MainMenu 
+        show={page === 'main'} open={() => setPage('notebook')} 
+        createDataSource={() => setPage('datasource-creator')}
+      />
+      <Notebook api={api} datasource={"postgresqsl"} show={page === 'notebook'} />
+      <DatasourceEditor show={page === 'datasource-creator'} create={() => setPage('notebook')} />
     </div>
   );
 }
