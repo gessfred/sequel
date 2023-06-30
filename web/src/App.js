@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import logo from './logo.svg';
 import './App.css';
 import uniqid from 'uniqid'
-
+import { Button, PictoButton } from './components/foundation/Buttons'
+import { Table } from './components/sql/Table'
 // url = "https://sequel.gessfred.xyz"
 
 function API(url) {
@@ -25,27 +26,7 @@ function API(url) {
   }
 }
 
-function Table({data}) {
-  if(!(data && data.columns && data.rows)) return ''
-  return (
-    <table className='query-results-table'>
-      <tr>
-        {data.columns.map((column, index) => (
-          <th key={index}>{column}</th>
-        ))}
-      </tr>
-      <tbody>
-      {data.rows.map((row, rowIndex) => (
-        <tr key={rowIndex}>
-          {row.map((cell, cellIndex) => (
-            <td key={cellIndex}>{cell}</td>
-          ))}
-        </tr>
-      ))}
-    </tbody>
-    </table>
-  )
-}
+
 
 function execSql(api, query, onSuccess) {
   console.log(query)
@@ -157,7 +138,7 @@ function DatasourceCard({name, open}) {
   return (
     <div>
       {name}
-      <button onClick={open}>Open</button>
+      <Button onClick={open}>Open</Button>
     </div>
   )
 }
@@ -191,16 +172,19 @@ function DatasourceEditor({show, create}) {
       <LabelInput label="Name" />
       <LabelInput label="Connection String" />
       <LabelInput label="Engine" />
-      <button>Test</button>
-      <button onClick={create}>Create</button>
+      <Button>Test</Button>
+      <Button onClick={create}>Create</Button>
     </div>
   )
 }
 
 function Header({navToMainMenu}) {
   return (
-    <div>
-      {navToMainMenu && <button onClick={navToMainMenu}>Return</button>}
+    <div className='app-header'>
+      
+      <Button onClick={navToMainMenu} style={navToMainMenu ? {} : {visibility: 'hidden'}}>
+        Return
+      </Button>
       <span>Sequel</span>
     </div>
   )
@@ -209,16 +193,20 @@ function Header({navToMainMenu}) {
 
 function App() {
   const [page, setPage] = useState({id: 'main'})
+  console.log(page)
   const api = API("http://localhost:8080")
   return (
     <div className='App'>
-      <Header navToMainMenu={page === 'main' ? null : () => setPage('main')} />
-      <MainMenu 
-        show={page === 'main'} open={() => setPage('notebook')} 
-        createDataSource={() => setPage('datasource-creator')}
-      />
-      <Notebook api={api} datasource={"postgresqsl"} show={page === 'notebook'} />
-      <DatasourceEditor show={page === 'datasource-creator'} create={() => setPage('notebook')} />
+      <Header navToMainMenu={page.id === 'main' ? null : () => setPage({id: 'main'})} />
+      <div className='app-main-content'>
+        <MainMenu 
+          show={page.id === 'main'} 
+          open={() => setPage({id: 'notebook'})} 
+          createDataSource={() => setPage('datasource-creator')}
+        />
+        <Notebook api={api} datasource={"postgresqsl"} show={page.id === 'notebook'} />
+        <DatasourceEditor show={page.id === 'datasource-creator'} create={() => setPage({id: 'notebook'})} />
+      </div>
     </div>
   );
 }
