@@ -63,7 +63,7 @@
 }
 
 .app-header {
-  background-color: #e7e3f7;
+  /*background-color: #e7e3f7;*/
   margin: 0;
   height: 48px;
   display: flex;
@@ -79,4 +79,9 @@
   margin-top: 48px;
   padding: 16px;
   /*overflow: scroll;*/
+}
+
+.app-title {
+  font-size: 20px;
+  font-weight: bold;
 }

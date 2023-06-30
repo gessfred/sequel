@@ -1,9 +1,13 @@
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import './Buttons.css'
 
-export function Button({onClick, style, children}) {
+export function Button({icon, onClick, style, children}) {
   return (
     <button onClick={onClick} style={style}>
-      {children}
+      <div>
+        {icon && <FontAwesomeIcon icon={icon} />}
+        {children}
+      </div>
     </button>
   )
 }

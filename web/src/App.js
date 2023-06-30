@@ -4,6 +4,11 @@ import './App.css';
 import uniqid from 'uniqid'
 import { Button, PictoButton } from './components/foundation/Buttons'
 import { Table } from './components/sql/Table'
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { faCheckSquare, faChevronLeft, faCoffee } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+
+library.add(faChevronLeft)
 // url = "https://sequel.gessfred.xyz"
 
 function API(url) {
@@ -16,7 +21,12 @@ function API(url) {
     }
     let response = fetch(url+route, headers)
     if(callbacks.json !== undefined) {
-      response = response.then(r => r.json()).then(callbacks.json).catch(err => {})
+      response = response
+        .then(r => (r.ok && r.json()) || (Promise.reject(r.text())))
+        .then(callbacks.json)
+    }
+    if(callbacks.error !== undefined) {
+      response = response.catch(err => err.then(e => callbacks.error({error: e})))
     }
     return response
   }
@@ -28,13 +38,19 @@ function API(url) {
 
 
 
-function execSql(api, query, onSuccess) {
+function execSql(api, query, onSuccess, onError) {
   console.log(query)
-  api.post('/query', {"query": query}, {json: (j) => {
+  api.post('/query', {"query": query}, {
+    json: (j) => {
     console.log(j)
     onSuccess(j)
 
-  }})
+    },
+    error: err => {
+      console.log(err)
+      onError && onError(err)
+    }
+  })
 }
 
 function QueryEditorKeyHandler(tabs, ctrlEnterHandler) {
@@ -68,9 +84,10 @@ function QueryEditorKeyHandler(tabs, ctrlEnterHandler) {
 
 function QueryEditor({api, query, setQuery, result, setResult, onCtrlEnter}) {
   const onKeyDown = QueryEditorKeyHandler("  ", (q) => {
-    execSql(api, q, setResult)
+    execSql(api, query, setResult, setResult)
     onCtrlEnter()
   })
+  console.log(result && result.error)
   return (
     <div>
       <textarea
@@ -82,13 +99,14 @@ function QueryEditor({api, query, setQuery, result, setResult, onCtrlEnter}) {
         cols={50}
       />
       <div className='query-editor-status-bar'>
-        <button onClick={() => execSql(api, query, setResult)}>
+        <button onClick={() => execSql(api, query, setResult, setResult)}>
           Run
         </button>
       </div>
-      <Table 
+      {result.columns && <Table 
         data={result}
-      />
+      />}
+      {result.error && <span>{result && result.error}</span>}
     </div>
   )
 }
@@ -182,10 +200,12 @@ function Header({navToMainMenu}) {
   return (
     <div className='app-header'>
       
-      <Button onClick={navToMainMenu} style={navToMainMenu ? {} : {visibility: 'hidden'}}>
-        Return
-      </Button>
-      <span>Sequel</span>
+      <Button 
+        onClick={navToMainMenu} 
+        style={navToMainMenu ? {} : {visibility: 'hidden'}} 
+        icon={faChevronLeft}
+      />
+      <span className='app-title'>Sequel</span>
     </div>
   )
 }

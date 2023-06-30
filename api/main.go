@@ -113,12 +113,15 @@ func queryHandler(w http.ResponseWriter, r *http.Request) {
 	// Test the connection
 	err = db.Ping()
 	if err != nil {
-		log.Fatal(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	columns, rows, err := executeQuery(db, query)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	// Create a Result struct
@@ -133,6 +136,7 @@ func queryHandler(w http.ResponseWriter, r *http.Request) {
 	// Encode the result as JSON
 	err = json.NewEncoder(w).Encode(result)
 	if err != nil {
+		fmt.Println(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
