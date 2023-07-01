@@ -20,19 +20,41 @@ function API(url) {
       headers['body'] = JSON.stringify(body)
     }
     let response = fetch(url+route, headers)
-    if(callbacks.json !== undefined) {
+    if(callbacks.success != undefined) {
+      response = response.then(r => r.ok && callbacks.success())
+    }
+    else if(callbacks.json !== undefined) {
       response = response
         .then(r => (r.ok && r.json()) || (Promise.reject(r.text())))
         .then(callbacks.json)
     }
     if(callbacks.error !== undefined) {
-      response = response.catch(err => err.then(e => callbacks.error({error: e})))
+      response = response.catch(err => {
+        console.log(err)
+        err.then(e => callbacks.error({error: e}))
+      })
     }
     return response
   }
+  const get = (route, callbacks) => call('GET', route, callbacks)
+  const post = (route, body, callbacks) => call('POST', route, callbacks, body)
   return {
-    get: (route, callbacks) => call('GET', route, callbacks),
-    post: (route, body, callbacks) => call('POST', route, callbacks, body)
+    get: get,
+    post: post,
+    auth: {
+      sendOTP: (user_email, onSuccess) => {
+        console.log('/login/otp?user_email='+user_email)
+        get('/login/otp?user_email='+user_email, {success: onSuccess})
+      },
+      getToken: (user_email, otp, onSuccess, onError) => {
+        console.log(user_email, otp)
+        post('/login', {otp: otp, user_email: user_email}, {
+          json: (token) => onSuccess(token),
+          error: (err) => onError(err)
+        })
+      }
+    },
+    sql: {}
   }
 }
 
@@ -178,7 +200,9 @@ function LabelInput({label, onChange}) {
   return (
     <div>
       <label>{label}</label>
-      <input type='text' />
+      <input type='text'
+        onChange={e => onChange(e.target.value)}
+      />
     </div>
   )
 }
@@ -210,22 +234,67 @@ function Header({navToMainMenu}) {
   )
 }
 
+function CenterCard({children}) {
+  return (
+    <div className='center-card-container'>
+      <div className='center-card'>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function Login({show, onLogin, api}) {
+  const [state, setState] = useState({user_email: '', stage: 'init'})
+  if(!show) return <span></span>
+  if(state.stage === 'init')
+    return (
+      <CenterCard >
+        <LabelInput 
+          label="Email"
+          onChange={email => setState(prev => Object.assign({}, prev, {user_email: email}))} 
+        />
+        <Button onClick={() => {
+          api.auth.sendOTP(state.user_email, () => console.log('ok'))
+          setState(prev => Object.assign({}, prev, {stage: 'challenge'}))
+        }}>
+          Get code
+        </Button>
+      </CenterCard>
+    )
+  return (
+    <CenterCard >
+      <LabelInput 
+        label="Code"
+        onChange={code => setState(prev => Object.assign({}, prev, {otp: code}))}
+      />
+      <Button onClick={() => api.auth.getToken(state.user_email, state.otp, onLogin, console.warn)}>
+        Login
+      </Button>
+    </CenterCard>
+  )
+}
 
 function App() {
-  const [page, setPage] = useState({id: 'main'})
-  console.log(page)
+  const [state, setState] = useState({pageid: 'login'})
   const api = API("http://localhost:8080")
+  const setStateProperty = property => setState(prev => Object.assign({}, prev, property))
   return (
     <div className='App'>
-      <Header navToMainMenu={page.id === 'main' ? null : () => setPage({id: 'main'})} />
+      <Header navToMainMenu={state.pageid === 'main' ? null : () => setStateProperty({pageid: 'main'})} />
       <div className='app-main-content'>
-        <MainMenu 
-          show={page.id === 'main'} 
-          open={() => setPage({id: 'notebook'})} 
-          createDataSource={() => setPage('datasource-creator')}
+        <Login 
+          show={state.pageid === 'login'} 
+          api={api}
+          onLogin={user => setState({user: user, pageid: 'main'})}
         />
-        <Notebook api={api} datasource={"postgresqsl"} show={page.id === 'notebook'} />
-        <DatasourceEditor show={page.id === 'datasource-creator'} create={() => setPage({id: 'notebook'})} />
+        <MainMenu 
+          show={state.pageid === 'main'} 
+          open={() => setStateProperty({pageid: 'notebook'})} 
+          createDataSource={() => setStateProperty({pageid: 'datasource-creator'})}
+        />
+        <Notebook api={api} datasource={"postgresqsl"} show={state.pageid === 'notebook'} />
+        <DatasourceEditor show={state.pageid === 'datasource-creator'} create={() => setStateProperty({pageid: 'notebook'})} />
       </div>
     </div>
   );
