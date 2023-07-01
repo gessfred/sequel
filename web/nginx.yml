@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - name: sequel-web
-        image: ghcr.io/gessfred/nginx/sequel-web:latest
+        image: ghcr.io/gessfred/sequel-web:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80

@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -457,6 +459,19 @@ type LoginToken struct {
 	Token     string `json:"token"`
 }
 
+func generateOTP() string {
+	key := make([]byte, 32) // Generating a 256-bit key
+	_, err := rand.Read(key)
+	if err != nil {
+		panic(err)
+	}
+
+	// Convert key to hexadecimal
+	hexKey := hex.EncodeToString(key)
+	fmt.Printf("Generated Key: %s\n", hexKey)
+	return hexKey
+}
+
 func sendEmail(destination, subject, message string) {
 	sess, err := session.NewSession(&aws.Config{
 		Region:      aws.String("us-east-1"),
@@ -511,18 +526,18 @@ func main() {
 
 	router := mux.NewRouter()
 
-	router.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/version", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "0.0.0")
 	})
 
-	router.HandleFunc("/query", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/query", func(w http.ResponseWriter, r *http.Request) {
 
 		queryHandler(w, r, datastore)
 	})
 
-	router.HandleFunc("/login/otp", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/login/otp", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(r.URL.Query().Get("user_email"))
-		otp := "123456"
+		otp := generateOTP()
 		err := datastore.WriteUser(&User{
 			UserEmail: r.URL.Query().Get("user_email"),
 			Auth: struct {
@@ -541,7 +556,7 @@ func main() {
 		}
 	})
 
-	router.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/login", func(w http.ResponseWriter, r *http.Request) {
 		var challenge ChallengeRequestBody
 		err := DecodeRequestBody(r, &challenge)
 		if err != nil {
@@ -560,7 +575,7 @@ func main() {
 		}, 200)
 	})
 
-	router.HandleFunc("/datasources", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/datasources", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			var datasource DataSource
 			err := DecodeRequestBody(r, &datasource)
@@ -580,7 +595,7 @@ func main() {
 		}
 	})
 
-	router.HandleFunc("/notebooks", func(w http.ResponseWriter, r *http.Request) {
+	router.HandleFunc("/api/notebooks", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			var notebook Notebook
 			err := DecodeRequestBody(r, &notebook)
