@@ -26,6 +26,16 @@ spec:
                 secretKeyRef:
                   name: sequel-master-secrets
                   key: mongodb_connection_string
+            - name: SES_USER_ID
+              valueFrom:
+                secretKeyRef:
+                  name: sequel-secrets
+                  key: SES_USER_ID
+            - name: SES_USER_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: sequel-secrets
+                  key: SES_USER_SECRET
             - name: ENVIRONMENT 
               value: 'prod'
 ---
