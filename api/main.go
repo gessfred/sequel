@@ -12,6 +12,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ses"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
@@ -452,6 +457,50 @@ type LoginToken struct {
 	Token     string `json:"token"`
 }
 
+func sendEmail(destination, subject, message string) {
+	sess, err := session.NewSession(&aws.Config{
+		Region:      aws.String("us-east-1"),
+		Credentials: credentials.NewStaticCredentials(os.Getenv("SES_USER_ID"), os.Getenv("SES_USER_SECRET"), ""),
+	})
+
+	svc := ses.New(sess)
+
+	input := &ses.SendEmailInput{
+		Destination: &ses.Destination{
+			CcAddresses: []*string{},
+			ToAddresses: []*string{
+				aws.String(destination),
+			},
+		},
+		Message: &ses.Message{
+			Body: &ses.Body{
+				Text: &ses.Content{
+					Data: aws.String(message),
+				},
+			},
+			Subject: &ses.Content{
+				Data: aws.String(subject),
+			},
+		},
+		Source: aws.String("bot@auth.sequel.gessfred.xyz"),
+	}
+
+	result, err := svc.SendEmail(input)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			default:
+				fmt.Println(aerr.Error())
+			}
+		} else {
+			fmt.Println(err.Error())
+		}
+		return
+	}
+
+	fmt.Println("Email Sent to address: " + *result.MessageId)
+}
+
 func main() {
 	datastore, err := NewDatastore(mongoUrl, "sequel")
 	if err != nil {
@@ -473,6 +522,7 @@ func main() {
 
 	router.HandleFunc("/login/otp", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(r.URL.Query().Get("user_email"))
+		otp := "123456"
 		err := datastore.WriteUser(&User{
 			UserEmail: r.URL.Query().Get("user_email"),
 			Auth: struct {
@@ -482,9 +532,10 @@ func main() {
 			}{
 				Token: "dummy-token",
 				TTL:   time.Now().Add(time.Hour),
-				OTP:   "123456",
+				OTP:   otp,
 			},
 		})
+		sendEmail(r.URL.Query().Get("user_email"), "Sequel connection code", otp)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
