@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -25,7 +26,8 @@ type Result struct {
 }
 
 type RequestBody struct {
-	Query string `json:"query"`
+	Query        string `json:"query"`
+	DataSourceID string `json:"datasource_id"`
 }
 
 func executeQuery(db *sql.DB, query string) ([]string, [][]interface{}, error) {
@@ -124,6 +126,11 @@ func queryHandler(w http.ResponseWriter, r *http.Request, datastore *Datastore) 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	datasource, err := datastore.GetDataSourceByID(requestBody.DataSourceID) // r.URL.Query().Get("datasource_id")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(datasource.Name)
 
 	// Access the "query" field from the request body
 	query := requestBody.Query
@@ -132,7 +139,7 @@ func queryHandler(w http.ResponseWriter, r *http.Request, datastore *Datastore) 
 	fmt.Println("Received query:", query)
 
 	// Open a connection to the database
-	db, err := sql.Open("postgres", connStr)
+	db, err := sql.Open("postgres", datasource.ConnectionString)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -186,6 +193,7 @@ type User struct {
 type DataSource struct {
 	Owner            string `json:"owner" bson:"owner"`
 	Name             string `json:"name" bson:"name"`
+	ID               string `json:"datasource_id" bson:"datasource_id"`
 	ConnectionString string `json:"connection_string" bson:"connection_string"`
 	Engine           string `json:"engine" bson:"engine"`
 }
@@ -342,10 +350,7 @@ func (d *Datastore) GetNotebooksByOwner(owner string) ([]Notebook, error) {
 	return notebooks, nil
 }
 
-// GetDataSourcesByOwner retrieves all datasources for a specific owner
-func (d *Datastore) GetDataSourcesByOwner(owner string) ([]DataSource, error) {
-	filter := bson.M{"owner": owner}
-
+func (d *Datastore) findDataSource(filter interface{}) ([]DataSource, error) {
 	cur, err := d.database.Collection("datasources").Find(context.Background(), filter)
 	if err != nil {
 		return nil, err
@@ -370,6 +375,32 @@ func (d *Datastore) GetDataSourcesByOwner(owner string) ([]DataSource, error) {
 	return dataSources, nil
 }
 
+func (d *Datastore) GetDataSourceByID(id string) (*DataSource, error) {
+	filter := bson.M{"datasource_id": id}
+
+	dataSource, err := d.findDataSource(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(dataSource) == 0 {
+		return nil, errors.New("No data source found with the provided id")
+	}
+
+	return &dataSource[0], nil
+}
+
+func (d *Datastore) GetDataSourcesByOwner(owner string) ([]DataSource, error) {
+	filter := bson.M{"owner": owner}
+
+	dataSources, err := d.findDataSource(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return dataSources, nil
+}
+
 // DeleteUser deletes a user document from the collection
 func (d *Datastore) DeleteUser(email string) error {
 	filter := bson.M{"user_email": email}
@@ -383,7 +414,6 @@ func (d *Datastore) DeleteUser(email string) error {
 }
 
 var (
-	connStr  string = os.Getenv("POSTGRES_TEST_CONNECTION")
 	mongoUrl string = os.Getenv("MONGODB_CONNECTION_STRING")
 )
 
@@ -423,7 +453,6 @@ type LoginToken struct {
 }
 
 func main() {
-
 	datastore, err := NewDatastore(mongoUrl, "sequel")
 	if err != nil {
 		log.Fatal(err)
@@ -438,6 +467,7 @@ func main() {
 	})
 
 	router.HandleFunc("/query", func(w http.ResponseWriter, r *http.Request) {
+
 		queryHandler(w, r, datastore)
 	})
 

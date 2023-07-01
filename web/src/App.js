@@ -78,9 +78,9 @@ function API(url, user) {
   }
 }
 
-function execSql(api, query, onSuccess, onError) {
-  console.log(query)
-  api.post('/query', {"query": query}, {
+function execSql(api, query, datasource, onSuccess, onError) {
+  console.log(query, datasource)
+  api.post('/query', {"query": query, datasource_id: datasource}, {
     json: (j) => {
     console.log(j)
     onSuccess(j)
@@ -122,9 +122,9 @@ function QueryEditorKeyHandler(tabs, ctrlEnterHandler) {
   }
 }
 
-function QueryEditor({api, query, setQuery, result, setResult, onCtrlEnter}) {
+function QueryEditor({api, query, datasource, setQuery, result, setResult, onCtrlEnter}) {
   const onKeyDown = QueryEditorKeyHandler("  ", (q) => {
-    execSql(api, query, setResult, setResult)
+    execSql(api, query, datasource, setResult, setResult)
     onCtrlEnter()
   })
   return (
@@ -138,7 +138,7 @@ function QueryEditor({api, query, setQuery, result, setResult, onCtrlEnter}) {
         cols={50}
       />
       <div className='query-editor-status-bar'>
-        <button onClick={() => execSql(api, query, setResult, setResult)}>
+        <button onClick={() => execSql(api, query, datasource, setResult, setResult)}>
           Run
         </button>
       </div>
@@ -199,6 +199,7 @@ function Notebook({api, datasource, show, data}) {
       <div className='notebook-cells-container'>
         {Object.values(state.cells).map((cell, idx) => <QueryEditor 
           api={api}
+          datasource={state.datasource_id}
           query={cell.query}
           result={cell.result}
           setQuery={updateCell(cell, 'query')}
@@ -251,7 +252,7 @@ function MainMenu({show, open, createDataSource, api}) {
     <div className='main-container'>
       <h2>Datasources</h2>
       <div className='main-content-container'>
-        {state.datasources.map(ds => <DatasourceCard name={ds.name} open={() => open({name: 'Untitled', cells: []})} />)}
+        {state.datasources.map(ds => <DatasourceCard name={ds.name} open={() => open({name: 'Untitled', datasource_id: ds.datasource_id, datasource_name: ds.name, cells: []})} />)}
       </div>
       <button onClick={createDataSource}>Create</button>
       <h2>Notebooks</h2>
@@ -289,7 +290,7 @@ function DatasourceEditor({show, create, api}) {
       <LabelInput label="Engine" value={state.datasource.engine} onChange={updateDs('engine')} />
       <Button>Test</Button>
       <Button onClick={() => {
-        api.userdata.datasources.write(state.datasource)
+        api.userdata.datasources.write(Object.assign({}, state.datasource, {datasource_id: uniqid()}))
         create()
       }}>Create</Button>
     </CenterCard>
@@ -321,7 +322,8 @@ function CenterCard({children}) {
 }
 
 function Login({show, onLogin, api}) {
-  const [state, setState] = useState({user_email: '', stage: 'init'})
+  const [state, setState] = useState({user_email: '', otp: '', stage: 'init'})
+  console.log(state)
   if(!show) return <span></span>
   if(state.stage === 'init')
     return (
@@ -381,7 +383,7 @@ function App() {
         />
       </div>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App
