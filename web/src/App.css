@@ -109,3 +109,56 @@
 .notebook-cells-container {
   padding: 0px 128px;
 }
+
+.foundation-label-input-label {
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+  border: none;
+  padding: 8px;
+  border-radius: 4px;
+  margin: 2px;
+}
+
+.notebook-name {
+  box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px;
+  border: none;
+  padding: 8px;
+  border-radius: 4px;
+  margin: 2px;
+  outline: none;
+}
+
+textarea {
+  box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
+  outline: none;
+  border: none;
+  padding: 0;
+  border-radius: 4px;
+}
+
+.main-content-container {
+  display: flex;
+}
+
+.main-container {
+  padding: 16px 128px;
+}
+
+.card {
+  background-color: #e7e3f7;
+  padding: 20px  40px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 24px;
+  margin: 8px;
+}
+
+.card-title {
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+.label-input-container {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}

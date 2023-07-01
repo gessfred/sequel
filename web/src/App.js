@@ -150,9 +150,14 @@ function QueryEditor({api, query, setQuery, result, setResult, onCtrlEnter}) {
   )
 }
 
-function NotebookToolbar({newCell, saveNotebook, metadata}) {
+function NotebookToolbar({data, newCell, saveNotebook, metadata, setData}) {
   return (
     <div className='notebook-toolbar-container'>
+      <input 
+        type='text' 
+        value={data.name} 
+        onChange={e => setData(prev => Object.assign({}, prev, {name: e.target.value}))} 
+        className='notebook-name' />
       <span className='notebook-toolbar-element'>{metadata.datasource}</span>
       <button onClick={newCell}>Add cell</button>
       <Button onClick={saveNotebook}>Save</Button>
@@ -161,66 +166,75 @@ function NotebookToolbar({newCell, saveNotebook, metadata}) {
 }
 
 function Notebook({api, datasource, show, data}) {
-  const [cells, setCells] = useState({})
+  const [state, setState] = useState({cells: {}})
   const updateCell = (cell, property) => value => {
-    setCells(prev => Object.assign({}, prev, {
-      [cell.id]: Object.assign({}, cell, {[property]: value})
-    }))
+    setState(prev => Object.assign({}, prev, Object.assign(prev.cells, {}, {[cell.id]: Object.assign({}, cell, {[property]: value})})))
   }
   const addCell = () => {
     const newCellID = uniqid()
     console.log(newCellID)
-    setCells(prev => Object.assign({}, prev, {[newCellID]: {
+    setState(prev => Object.assign({}, prev, {cells: Object.assign({}, prev.cells, {[newCellID]: {
       "query": "", "result": {}, "position": 1, "id": newCellID
-    }}))
+    }})}))
   }
   useEffect(() => {
     if(data && data.cells) {
       console.log(Object.fromEntries(data.cells.map(cell => [cell.id, cell])))
-      setCells(Object.fromEntries(data.cells.map(cell => [cell.id, cell])))
+      setState(Object.assign({}, data, {cells: Object.fromEntries(data.cells.map(cell => [cell.id, cell]))}))
     }
       
   }, [data])
-  console.log(cells)
   if(!show) return <span />
   return (
     <div>
       <NotebookToolbar 
         newCell={addCell}
         metadata={{datasource: datasource}}
+        data={state}
+        setData={setState}
         saveNotebook={() => {
-          api.userdata.notebooks.write(Object.assign({}, data, {cells: Object.values(cells)}))
+          api.userdata.notebooks.write(Object.assign({}, state, {cells: Object.values(state.cells)}))
         }}
       />
       <div className='notebook-cells-container'>
-        {Object.values(cells).map((cell, idx) => <QueryEditor 
+        {Object.values(state.cells).map((cell, idx) => <QueryEditor 
           api={api}
           query={cell.query}
           result={cell.result}
           setQuery={updateCell(cell, 'query')}
           setResult={updateCell(cell, 'result')}
-          onCtrlEnter={idx >= cells.length - 1 ? addCell : () => {}}
+          onCtrlEnter={idx >= state.cells.length - 1 ? addCell : () => {}}
         />)}
       </div>
     </div>
   )
 }
 
+function Card({children}) {
+  return (
+    <div className='card'>
+      {children}
+    </div>
+  )
+}
+
 function DatasourceCard({name, open}) {
   return (
-    <div>
-      {name}
-      <Button onClick={open}>Open</Button>
-    </div>
+    <Card>
+      <span className='card-title'>{name}</span>
+      <Button onClick={open}>
+        Create notebook
+      </Button>
+    </Card>
   )
 }
 
 function NotebookCard({notebook, open}) {
   return (
-    <div>
-      {notebook.name}
+    <Card>
+      <span className='card-title'>{notebook.name}</span>
       <Button onClick={open}>Open</Button>
-    </div>
+    </Card>
   )
 }
 
@@ -234,21 +248,27 @@ function MainMenu({show, open, createDataSource, api}) {
   }, [api.auth.authenticated])
   if(!show) return <span />
   return (
-    <div>
+    <div className='main-container'>
       <h2>Datasources</h2>
-      {state.datasources.map(ds => <DatasourceCard name={ds.name} open={() => open({name: 'Untitled', cells: []})} />)}
+      <div className='main-content-container'>
+        {state.datasources.map(ds => <DatasourceCard name={ds.name} open={() => open({name: 'Untitled', cells: []})} />)}
+      </div>
       <button onClick={createDataSource}>Create</button>
       <h2>Notebooks</h2>
-      {state.notebooks.map(nb => <NotebookCard notebook={nb} open={() => open(nb)} />)}
+      <div className='main-content-container'>
+        {state.notebooks.map(nb => <NotebookCard notebook={nb} open={() => open(nb)} />)}
+      </div>
     </div>
   )
 }
 
 function LabelInput({label, onChange, value}) {
   return (
-    <div>
+    <div className='label-input-container'>
       <label>{label}</label>
-      <input type='text'
+      <input 
+        className='foundation-label-input-label'
+        type='text'
         value={value}
         onChange={e => onChange(e.target.value)}
       />
@@ -263,7 +283,7 @@ function DatasourceEditor({show, create, api}) {
   })
   if(!show) return <span></span>
   return (
-    <div>
+    <CenterCard>
       <LabelInput label="Name" value={state.datasource.name} onChange={updateDs('name')} />
       <LabelInput label="Connection String" value={state.datasource.connection_string} onChange={updateDs('connection_string')} />
       <LabelInput label="Engine" value={state.datasource.engine} onChange={updateDs('engine')} />
@@ -272,7 +292,7 @@ function DatasourceEditor({show, create, api}) {
         api.userdata.datasources.write(state.datasource)
         create()
       }}>Create</Button>
-    </div>
+    </CenterCard>
   )
 }
 
