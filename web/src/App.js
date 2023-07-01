@@ -11,7 +11,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 library.add(faChevronLeft)
 // url = "https://sequel.gessfred.xyz"
 
-function API(url) {
+function API(url, user) {
   const call = (verb, route, callbacks, body) => {
     const headers = {
       method: verb
@@ -20,15 +20,15 @@ function API(url) {
       headers['body'] = JSON.stringify(body)
     }
     let response = fetch(url+route, headers)
-    if(callbacks.success != undefined) {
+    if(callbacks && callbacks.success !== undefined) {
       response = response.then(r => r.ok && callbacks.success())
     }
-    else if(callbacks.json !== undefined) {
+    else if(callbacks && callbacks.json !== undefined) {
       response = response
         .then(r => (r.ok && r.json()) || (Promise.reject(r.text())))
         .then(callbacks.json)
     }
-    if(callbacks.error !== undefined) {
+    if(callbacks && callbacks.error !== undefined) {
       response = response.catch(err => {
         console.log(err)
         err.then(e => callbacks.error({error: e}))
@@ -36,6 +36,7 @@ function API(url) {
     }
     return response
   }
+  //const callv2 = (verb, route, return_type, body) => {}
   const get = (route, callbacks) => call('GET', route, callbacks)
   const post = (route, body, callbacks) => call('POST', route, callbacks, body)
   return {
@@ -52,13 +53,30 @@ function API(url) {
           json: (token) => onSuccess(token),
           error: (err) => onError(err)
         })
+      },
+      authenticated: user !== undefined 
+    },
+    userdata: {
+      datasources: {
+        read: (callback) => {
+          get("/datasources?owner="+user.user_email, {
+            json: callback
+          })
+        },
+        write: (datasource) => post("/datasources", Object.assign({}, datasource, {owner: user.user_email}))
+      },
+      notebooks: {
+        read: (callback) => {
+          get("/notebooks?owner="+user.user_email, {
+            json: callback
+          })
+        },
+        write: () => {}
       }
     },
     sql: {}
   }
 }
-
-
 
 function execSql(api, query, onSuccess, onError) {
   console.log(query)
@@ -183,39 +201,61 @@ function DatasourceCard({name, open}) {
   )
 }
 
-function MainMenu({show, open, createDataSource}) {
+function MainMenu({show, open, createDataSource, api}) {
+  const [state, setState] = useState({notebooks: [], datasources: []})
+  console.log(state)
+  useEffect(() => {
+    if(api.auth.authenticated) {
+      api.userdata.datasources.read(datasources => setState(prev => Object.assign({}, prev, {datasources: datasources || []})))
+      api.userdata.notebooks.read(nbs => setState(prev => Object.assign({}, prev, {notebooks: nbs || []})))
+    }
+  }, [api.auth.authenticated])
   if(!show) return <span />
   return (
     <div>
+      <h2>Datasources</h2>
       <DatasourceCard
         open={open}
         name='postresql'
       />
+      {state.datasources.map(ds => <DatasourceCard name={ds.name} open={open} />)}
       <button onClick={createDataSource}>Create</button>
+      <h2>Notebooks</h2>
+      {state.notebooks.map(nb => <span>{nb.name}</span>)}
     </div>
   )
 }
 
-function LabelInput({label, onChange}) {
+function LabelInput({label, onChange, value}) {
   return (
     <div>
       <label>{label}</label>
       <input type='text'
+        value={value}
         onChange={e => onChange(e.target.value)}
       />
     </div>
   )
 }
 
-function DatasourceEditor({show, create}) {
+function DatasourceEditor({show, create, api}) {
+  const [state, setState] = useState({datasource: {name: '', connection_string: '', engine: ''}})
+  const updateDs = property => value => setState(prev => {
+    return Object.assign({}, prev, {datasource: Object.assign({}, prev.datasource, {[property]: value})})
+  })
+  console.log(state)
   if(!show) return <span></span>
   return (
     <div>
-      <LabelInput label="Name" />
-      <LabelInput label="Connection String" />
-      <LabelInput label="Engine" />
+      <LabelInput label="Name" value={state.datasource.name} onChange={updateDs('name')} />
+      <LabelInput label="Connection String" value={state.datasource.connection_string} onChange={updateDs('connection_string')} />
+      <LabelInput label="Engine" value={state.datasource.engine} onChange={updateDs('engine')} />
       <Button>Test</Button>
-      <Button onClick={create}>Create</Button>
+      <Button onClick={() => {
+        console.log(api)
+        api.userdata.datasources.write(state.datasource)
+        create()
+      }}>Create</Button>
     </div>
   )
 }
@@ -252,6 +292,7 @@ function Login({show, onLogin, api}) {
       <CenterCard >
         <LabelInput 
           label="Email"
+          value={state.user_email}
           onChange={email => setState(prev => Object.assign({}, prev, {user_email: email}))} 
         />
         <Button onClick={() => {
@@ -266,6 +307,7 @@ function Login({show, onLogin, api}) {
     <CenterCard >
       <LabelInput 
         label="Code"
+        value={state.otp}
         onChange={code => setState(prev => Object.assign({}, prev, {otp: code}))}
       />
       <Button onClick={() => api.auth.getToken(state.user_email, state.otp, onLogin, console.warn)}>
@@ -277,7 +319,8 @@ function Login({show, onLogin, api}) {
 
 function App() {
   const [state, setState] = useState({pageid: 'login'})
-  const api = API("http://localhost:8080")
+  console.log(state)
+  const api = API("http://localhost:8080", state.user)
   const setStateProperty = property => setState(prev => Object.assign({}, prev, property))
   return (
     <div className='App'>
@@ -289,12 +332,17 @@ function App() {
           onLogin={user => setState({user: user, pageid: 'main'})}
         />
         <MainMenu 
+          api={api}
           show={state.pageid === 'main'} 
           open={() => setStateProperty({pageid: 'notebook'})} 
           createDataSource={() => setStateProperty({pageid: 'datasource-creator'})}
         />
         <Notebook api={api} datasource={"postgresqsl"} show={state.pageid === 'notebook'} />
-        <DatasourceEditor show={state.pageid === 'datasource-creator'} create={() => setStateProperty({pageid: 'notebook'})} />
+        <DatasourceEditor 
+          show={state.pageid === 'datasource-creator'} 
+          create={() => setStateProperty({pageid: 'notebook'})} 
+          api={api}
+        />
       </div>
     </div>
   );

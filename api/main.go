@@ -182,6 +182,34 @@ type User struct {
 	} `bson:"auth"`
 }
 
+// DataSource represents a data source with a name, connection string, and engine name
+type DataSource struct {
+	Owner            string `json:"owner" bson:"owner"`
+	Name             string `json:"name" bson:"name"`
+	ConnectionString string `json:"connection_string" bson:"connection_string"`
+	Engine           string `json:"engine" bson:"engine"`
+}
+
+// Notebook represents a notebook with a name, last edited date, and a list of cells
+type Notebook struct {
+	Owner      string    `json:"owner" bson:"owner"`
+	Name       string    `json:"name" bson:"name"`
+	LastEdited time.Time `json:"last_edited" bson:"last_edited"`
+	Cells      []Cell    `json:"cells" bson:"cells"`
+}
+
+// Cell represents a cell in the notebook with a SQL query and result
+type Cell struct {
+	Query  string     `json:"query" bson:"query"`
+	Result CellResult `json:"result" bson:"result"`
+}
+
+// CellResult represents the result of executing a SQL query in a cell
+type CellResult struct {
+	Columns []string   `json:"columns" bson:"columns"`
+	Rows    [][]string `json:"rows" bson:"rows"`
+}
+
 // Datastore represents the MongoDB datastore
 type Datastore struct {
 	client   *mongo.Client
@@ -251,6 +279,90 @@ func (d *Datastore) WriteUser(user *User) error {
 		fmt.Printf("inserted a new document with ID %v\n", result.UpsertedID)
 	}
 	return nil
+}
+
+// UpsertDataSource upserts a datasource in the "datasources" collection
+func (d *Datastore) WriteDataSource(dataSource *DataSource) error {
+	filter := bson.M{"name": dataSource.Name}
+
+	opts := options.Replace().SetUpsert(true)
+
+	_, err := d.database.Collection("datasources").ReplaceOne(context.Background(), filter, dataSource, opts)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpsertNotebook upserts a notebook in the "notebooks" collection
+func (d *Datastore) WriteNotebook(notebook *Notebook) error {
+	filter := bson.M{"name": notebook.Name}
+
+	opts := options.Replace().SetUpsert(true)
+
+	_, err := d.database.Collection("notebooks").ReplaceOne(context.Background(), filter, notebook, opts)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetNotebooksByOwner retrieves all notebooks for a specific owner
+func (d *Datastore) GetNotebooksByOwner(owner string) ([]Notebook, error) {
+	filter := bson.M{"owner": owner}
+
+	cur, err := d.database.Collection("notebooks").Find(context.Background(), filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(context.Background())
+
+	var notebooks []Notebook
+	for cur.Next(context.Background()) {
+		var notebook Notebook
+		err := cur.Decode(&notebook)
+		if err != nil {
+			return nil, err
+		}
+
+		notebooks = append(notebooks, notebook)
+	}
+
+	if err := cur.Err(); err != nil {
+		return nil, err
+	}
+
+	return notebooks, nil
+}
+
+// GetDataSourcesByOwner retrieves all datasources for a specific owner
+func (d *Datastore) GetDataSourcesByOwner(owner string) ([]DataSource, error) {
+	filter := bson.M{"owner": owner}
+
+	cur, err := d.database.Collection("datasources").Find(context.Background(), filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(context.Background())
+
+	var dataSources []DataSource
+	for cur.Next(context.Background()) {
+		var dataSource DataSource
+		err := cur.Decode(&dataSource)
+		if err != nil {
+			return nil, err
+		}
+
+		dataSources = append(dataSources, dataSource)
+	}
+
+	if err := cur.Err(); err != nil {
+		return nil, err
+	}
+
+	return dataSources, nil
 }
 
 // DeleteUser deletes a user document from the collection
@@ -360,6 +472,46 @@ func main() {
 			UserEmail: challenge.UserEmail,
 			Token:     user.Auth.Token,
 		}, 200)
+	})
+
+	router.HandleFunc("/datasources", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "POST" {
+			var datasource DataSource
+			err := DecodeRequestBody(r, &datasource)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+			// TODO get owner from authorization
+			// TODO set creation_date
+			fmt.Println(datasource)
+			datastore.WriteDataSource(&datasource)
+		} else if r.Method == "GET" {
+			datasources, err := datastore.GetDataSourcesByOwner(r.URL.Query().Get("owner"))
+			if err != nil {
+				fmt.Println(err)
+			}
+			respondWithJSON(w, datasources, 200)
+		}
+	})
+
+	router.HandleFunc("/notebooks", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "POST" {
+			var notebook Notebook
+			err := DecodeRequestBody(r, &notebook)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+			// TODO get owner from authorization
+			// TODO set creation_date
+			fmt.Println(notebook)
+			datastore.WriteNotebook(&notebook)
+		} else if r.Method == "GET" {
+			notebooks, err := datastore.GetNotebooksByOwner(r.URL.Query().Get("owner"))
+			if err != nil {
+				fmt.Println(err)
+			}
+			respondWithJSON(w, notebooks, 200)
+		}
 	})
 
 	// Start the HTTP server
