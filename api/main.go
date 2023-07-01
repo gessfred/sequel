@@ -192,22 +192,27 @@ type DataSource struct {
 
 // Notebook represents a notebook with a name, last edited date, and a list of cells
 type Notebook struct {
-	Owner      string    `json:"owner" bson:"owner"`
-	Name       string    `json:"name" bson:"name"`
-	LastEdited time.Time `json:"last_edited" bson:"last_edited"`
-	Cells      []Cell    `json:"cells" bson:"cells"`
+	Owner          string    `json:"owner" bson:"owner"`
+	Name           string    `json:"name" bson:"name"`
+	DataSourceID   string    `json:"datasource_id" bson:"datasource_id"`
+	DataSourceName string    `json:"datasource_name" bson:"datasource_name"`
+	CreationDate   time.Time `json:"creation_date" bson:"creation_date"`
+	LastEdited     time.Time `json:"last_edited" bson:"last_edited"`
+	Cells          []Cell    `json:"cells" bson:"cells"`
 }
 
 // Cell represents a cell in the notebook with a SQL query and result
 type Cell struct {
-	Query  string     `json:"query" bson:"query"`
-	Result CellResult `json:"result" bson:"result"`
+	Query    string     `json:"query" bson:"query"`
+	Result   CellResult `json:"result" bson:"result"`
+	ID       string     `json:"id" bson:"id"`
+	Position int        `json:"position" bson:"position"`
 }
 
 // CellResult represents the result of executing a SQL query in a cell
 type CellResult struct {
-	Columns []string   `json:"columns" bson:"columns"`
-	Rows    [][]string `json:"rows" bson:"rows"`
+	Columns []string        `json:"columns" bson:"columns"`
+	Rows    [][]interface{} `json:"rows" bson:"rows"`
 }
 
 // Datastore represents the MongoDB datastore

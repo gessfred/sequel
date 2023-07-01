@@ -73,6 +73,7 @@
   left: 0;
   width: 100vw;
   position: fixed;
+  background-color: white;
 }
 
 .app-main-content {
@@ -103,4 +104,8 @@
   box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
   border-radius: 12px;
   height: 160px;
+}
+
+.notebook-cells-container {
+  padding: 0px 128px;
 }
