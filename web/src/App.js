@@ -4,9 +4,9 @@ import uniqid from 'uniqid'
 import { Button } from './components/foundation/Buttons'
 import { Notebook } from './components/Notebook'
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faChevronLeft } from '@fortawesome/free-solid-svg-icons'
+import { faChevronLeft, faPlay } from '@fortawesome/free-solid-svg-icons'
 
-library.add(faChevronLeft)
+library.add(faChevronLeft, faPlay)
 // url = "https://sequel.gessfred.xyz"
 
 function API(url, user) {

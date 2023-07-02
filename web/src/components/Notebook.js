@@ -3,6 +3,7 @@ import uniqid from 'uniqid'
 import { Table } from './sql/Table'
 import { Button } from './foundation/Buttons'
 import { CodeEditor } from './foundation/Code'
+import './Notebook.css'
 
 function execSql(api, query, datasource, onSuccess, onError) {
   console.log(query, datasource)
@@ -49,31 +50,6 @@ function QueryEditorKeyHandler(tabs, ctrlEnterHandler) {
   }
 }
 
-function NotebookCell({api, query, datasource, setQuery, result, setResult, onCtrlEnter}) {
-  const onKeyDown = QueryEditorKeyHandler("  ", (q) => {
-    execSql(api, query, datasource, setResult, setResult)
-    onCtrlEnter()
-  })
-  console.log(datasource)
-  return (
-    <div>
-      <CodeEditor 
-        code={query} 
-        setCode={setQuery}
-      />
-      <div className='query-editor-status-bar'>
-        <button onClick={() => execSql(api, query, datasource, setResult, setResult)}>
-          Run
-        </button>
-      </div>
-      {result.columns && <Table 
-        data={result}
-      />}
-      {result.error && <span>{result && result.error}</span>}
-    </div>
-  )
-}
-
 function NotebookToolbar({data, newCell, saveNotebook, metadata, setData}) {
   return (
     <div className='notebook-toolbar-container'>
@@ -88,6 +64,55 @@ function NotebookToolbar({data, newCell, saveNotebook, metadata, setData}) {
     </div>
   )
 }
+
+function Selector({choices, onChoice}) {
+  return (
+    <div className='selector-container'>
+      {choices.map(choice => <Button onClick={() => onChoice(choice)}>{choice}</Button>)}
+    </div>
+  )
+}
+
+function NotebookCellToolbar({run, style, setStyle}) {
+  return (
+    <div className='notebook-cell-status-bar'>
+      <Button icon='fa-play' onClick={run}>
+        Run
+      </Button>
+      <Selector 
+        choices={['Table', 'Dashboard']}
+        onChoice={(choice) => {
+          setStyle(choice)
+        }}
+      />
+    </div>
+  )
+}
+
+function NotebookCell({api, query, datasource, setQuery, result, setResult, style, setStyle, onCtrlEnter}) {
+  const onKeyDown = QueryEditorKeyHandler("  ", (q) => {
+    execSql(api, query, datasource, setResult, setResult)
+    onCtrlEnter()
+  })
+  return (
+    <div>
+      <CodeEditor 
+        code={query} 
+        setCode={setQuery}
+      />
+      <NotebookCellToolbar 
+        run={() => execSql(api, query, datasource, setResult, setResult)}
+        style={style}
+        setStyle={setStyle}
+      />
+      {result.columns &&   <Table 
+        data={result}
+      />}
+      {result.error && <span>{result && result.error}</span>}
+    </div>
+  )
+}
+
 
 export function Notebook({api, datasource, show, data}) {
   const [state, setState] = useState({cells: {}})
@@ -124,6 +149,8 @@ export function Notebook({api, datasource, show, data}) {
         {Object.values(state.cells).map((cell, idx) => <NotebookCell 
           api={api}
           datasource={state.datasource_id}
+          cell={cell}
+          setCell={() => {}}
           query={cell.query}
           result={cell.result}
           setQuery={updateCell(cell, 'query')}
