@@ -334,7 +334,6 @@ func main() {
 			}
 			// TODO get owner from authorization
 			// TODO set creation_date
-			fmt.Println(notebook)
 			datastore.WriteNotebook(&notebook)
 		} else if r.Method == "GET" {
 			notebooks, err := datastore.GetNotebooksByOwner(r.URL.Query().Get("owner"))
