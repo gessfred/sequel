@@ -3,6 +3,8 @@ name: Build and Deploy api
 on:
   push:
     branches: [ main ]
+    paths:
+      - ./api
 
 jobs:
   build:

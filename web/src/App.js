@@ -357,7 +357,6 @@ function Login({show, onLogin, api}) {
 
 function App() {
   const [state, setState] = useState({pageid: 'login'})
-  console.log(state, process.env.REACT_APP_API_URL)
   const api = API(process.env.REACT_APP_API_URL, state.user)
   const setStateProperty = property => setState(prev => Object.assign({}, prev, property))
   useEffect(() => {

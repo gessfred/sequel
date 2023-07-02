@@ -3,6 +3,8 @@ name: Build and Deploy web client
 on:
   push:
     branches: [ main ]
+    paths:
+      - ./web
 
 jobs:
   build:
