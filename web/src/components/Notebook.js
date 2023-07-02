@@ -57,13 +57,9 @@ function NotebookCell({api, query, datasource, setQuery, result, setResult, onCt
   console.log(datasource)
   return (
     <div>
-      <textarea
-        className='query-editor-input'
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-        onKeyDown={onKeyDown}
-        rows={4}
-        cols={50}
+      <CodeEditor 
+        code={query} 
+        setCode={setQuery}
       />
       <div className='query-editor-status-bar'>
         <button onClick={() => execSql(api, query, datasource, setResult, setResult)}>
