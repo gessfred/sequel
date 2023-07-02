@@ -4,12 +4,42 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+var (
+	mongoUrl string = os.Getenv("MONGODB_CONNECTION_STRING")
+)
+
+func createMongoDBClient(connectionString string) (*mongo.Client, error) {
+	// Set up a context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Create client options
+	clientOptions := options.Client().ApplyURI(connectionString)
+
+	// Connect to MongoDB
+	client, err := mongo.Connect(ctx, clientOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	// Ping the MongoDB server to verify the connection
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("Connected to MongoDB!")
+
+	return client, nil
+}
 
 /*
 datastore

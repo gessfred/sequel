@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
@@ -21,8 +20,6 @@ import (
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Result struct {
@@ -180,35 +177,6 @@ func queryHandler(w http.ResponseWriter, r *http.Request, datastore *Datastore) 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-}
-
-var (
-	mongoUrl string = os.Getenv("MONGODB_CONNECTION_STRING")
-)
-
-func createMongoDBClient(connectionString string) (*mongo.Client, error) {
-	// Set up a context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	// Create client options
-	clientOptions := options.Client().ApplyURI(connectionString)
-
-	// Connect to MongoDB
-	client, err := mongo.Connect(ctx, clientOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	// Ping the MongoDB server to verify the connection
-	err = client.Ping(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	fmt.Println("Connected to MongoDB!")
-
-	return client, nil
 }
 
 type ChallengeRequestBody struct {
