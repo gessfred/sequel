@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react'
-import logo from './logo.svg';
-import './App.css';
+import './App.css'
 import uniqid from 'uniqid'
-import { Button, PictoButton } from './components/foundation/Buttons'
+import { Button } from './components/foundation/Buttons'
 import { Table } from './components/sql/Table'
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faCheckSquare, faChevronLeft, faCoffee } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChevronLeft } from '@fortawesome/free-solid-svg-icons'
 
 library.add(faChevronLeft)
 // url = "https://sequel.gessfred.xyz"
@@ -48,7 +46,6 @@ function API(url, user) {
         get('/login/otp?user_email='+user_email, {success: onSuccess})
       },
       getToken: (user_email, otp, onSuccess, onError) => {
-        console.log(user_email, otp)
         post('/login', {otp: otp, user_email: user_email}, {
           json: (token) => onSuccess(token),
           error: (err) => onError(err)
@@ -59,6 +56,7 @@ function API(url, user) {
     userdata: {
       datasources: {
         read: (callback) => {
+          console.log(user)
           get("/datasources?owner="+user.user_email, {
             json: callback
           })
@@ -127,6 +125,7 @@ function QueryEditor({api, query, datasource, setQuery, result, setResult, onCtr
     execSql(api, query, datasource, setResult, setResult)
     onCtrlEnter()
   })
+  console.log(datasource)
   return (
     <div>
       <textarea
@@ -240,6 +239,7 @@ function NotebookCard({notebook, open}) {
 }
 
 function MainMenu({show, open, createDataSource, api}) {
+  console.log(api.auth.authenticated)
   const [state, setState] = useState({notebooks: [], datasources: []})
   useEffect(() => {
     if(api.auth.authenticated) {
@@ -357,9 +357,15 @@ function Login({show, onLogin, api}) {
 
 function App() {
   const [state, setState] = useState({pageid: 'login'})
-  console.log(state)
-  const api = API("http://localhost:8080", state.user)
+  console.log(state, process.env.REACT_APP_API_URL)
+  const api = API(process.env.REACT_APP_API_URL, state.user)
   const setStateProperty = property => setState(prev => Object.assign({}, prev, property))
+  useEffect(() => {
+    const cachedUser = localStorage.getItem("user")
+    if(cachedUser) {
+      setStateProperty({user: JSON.parse(cachedUser), pageid: 'main'})
+    }
+  }, [])
   return (
     <div className='App'>
       <Header navToMainMenu={state.pageid === 'main' ? null : () => setStateProperty({pageid: 'main'})} />
@@ -367,7 +373,10 @@ function App() {
         <Login 
           show={state.pageid === 'login'} 
           api={api}
-          onLogin={user => setState({user: user, pageid: 'main'})}
+          onLogin={user => {
+            localStorage.setItem('user', JSON.stringify(user))
+            setState({user: user, pageid: 'main'})
+          }}
         />
         <MainMenu 
           api={api}
