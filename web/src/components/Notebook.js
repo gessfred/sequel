@@ -72,10 +72,16 @@ function Selector({cell, choices, setStyle}) {
   return (
     <div className='selector-container'>
       {choices.map(choice => <Button onClick={() => setStyle({type: choice})}>{choice}</Button>)}
+      <span>X</span>
+      <Dropdown 
+        items={(cell && cell.result && cell.result.columns) || []} 
+        text={(cell && cell.style && cell.style.x && cell.style.x.name) || 'X axis'}
+        onSelect={(column, k) => setStyle(prev => Object.assign({}, prev, {x: {name: column, idx: k}}))}  
+      />
       <span>Y</span>
       <Dropdown 
         items={(cell && cell.result && cell.result.columns) || []} 
-        text="Y axis"
+        text={(cell && cell.style && cell.style.y && cell.style.y.name) || 'Y axis'}
         onSelect={(column, k) => setStyle(prev => Object.assign({}, prev, {y: {name: column, idx: k}}))}  
       />
     </div>
@@ -118,6 +124,7 @@ function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onC
       />}
       {cell.result && cell.style && cell.style.type === 'Dashboard' && <Dashboard 
         data={(cell.result && cell.style && cell.style.y && cell.result.rows && cell.result.rows.map(row => row[cell.style.y.idx])) || []}
+        labels={(cell.result && cell.style && cell.style.x && cell.result.rows && cell.result.rows.map(row => row[cell.style.x.idx])) || []}
       />}
       {cell.result.error && <span>{cell.result && cell.result.error}</span>}
     </div>

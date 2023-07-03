@@ -2,4 +2,12 @@
   display: flex;
   width: 100%;
   justify-content: center;
+  padding: 8px;
+}
+.bar {
+  fill: #007AFF; /* Blue color */
+  stroke: #007AFF; /* Blue color */
+  stroke-width: 1px;
+  rx: 4px; /* Round corners */
+  ry: 4px; /* Round corners */
 }

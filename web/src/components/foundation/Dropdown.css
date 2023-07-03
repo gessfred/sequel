@@ -1,6 +1,9 @@
 .dropdown {
   position: relative;
   display: inline-block;
+  box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+  padding:  8px 12px;
+  border-radius: 12px;
 }
 
 .dropdown-content {
