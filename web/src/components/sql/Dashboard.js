@@ -2,16 +2,13 @@ import React, { useRef, useEffect } from 'react'
 import * as d3 from 'd3'
 import './Dashboard.css'
 
-export function Dashboard({type, data, labels}) {
+export function Dashboard({type, data, labels, width, height}) {
   const svgRef = useRef(null)
-  const width = 400
-  const barWidth = 50
-  const height = 200
-  const spacing = 3
   useEffect(() => {
     const xlabels = labels ? labels : data.map((x, i) => i)
     console.log(xlabels)
     const svg = d3.select(svgRef.current)
+    svg.attr("transform", "translate(" + 20 + "," + 20 + ")")
 
     const maxValue = d3.max(data);
     const xScale = d3.scaleBand()
@@ -25,6 +22,7 @@ export function Dashboard({type, data, labels}) {
       .range([height, 0])
     // Set the ranges
     svg.selectAll('rect').remove()
+    svg.selectAll('g').remove()
     svg
       .selectAll('rect')
       .data(data)
@@ -44,12 +42,11 @@ export function Dashboard({type, data, labels}) {
       }
       svg.append("g")
       .attr("transform", "translate(0," + height + ")")
-      .call(xAxis);
-    /*var yAxis = d3.axisLeft(data).ticks(5)
-  
+      .call(xAxis)
+    const yAxis = d3.axisLeft(yScale).ticks(8)
     yAxis.tickSize(0)
     svg.append("g")
-        .call(yAxis)*/
+    .call(yAxis)
   }, [data])
 /**
  *       .attr("width", width + margin.left + margin.right)
@@ -57,7 +54,7 @@ export function Dashboard({type, data, labels}) {
  */
   return (
     <div className='dashboard-container'>
-      <svg ref={svgRef} width={width+10} height={height+ 50}>
+      <svg ref={svgRef} width={width+50} height={height+ 50}>
         {/* Add any other SVG elements or components here */}
       </svg>
     </div>

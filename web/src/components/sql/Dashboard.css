@@ -11,3 +11,7 @@
   rx: 4px; /* Round corners */
   ry: 4px; /* Round corners */
 }
+
+svg {
+  padding: 4px;
+}

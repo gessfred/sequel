@@ -123,6 +123,8 @@ function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onC
         data={cell.result}
       />}
       {cell.result && cell.style && cell.style.type === 'Dashboard' && <Dashboard 
+        width={600}
+        height={250}
         data={(cell.result && cell.style && cell.style.y && cell.result.rows && cell.result.rows.map(row => row[cell.style.y.idx])) || []}
         labels={(cell.result && cell.style && cell.style.x && cell.result.rows && cell.result.rows.map(row => row[cell.style.x.idx])) || []}
       />}
