@@ -4,6 +4,8 @@ import { Table } from './sql/Table'
 import { Button } from './foundation/Buttons'
 import { CodeEditor } from './foundation/Code'
 import './Notebook.css'
+import { Dashboard } from './sql/Dashboard'
+import { Dropdown } from './foundation/Dropdown'
 
 function execSql(api, query, datasource, onSuccess, onError) {
   console.log(query, datasource)
@@ -64,51 +66,60 @@ function NotebookToolbar({data, newCell, saveNotebook, metadata, setData}) {
     </div>
   )
 }
-
-function Selector({choices, onChoice}) {
+//TODO rename styleselector
+function Selector({cell, choices, setStyle}) {
+  console.log(cell)
   return (
     <div className='selector-container'>
-      {choices.map(choice => <Button onClick={() => onChoice(choice)}>{choice}</Button>)}
+      {choices.map(choice => <Button onClick={() => setStyle({type: choice})}>{choice}</Button>)}
+      <span>Y</span>
+      <Dropdown 
+        items={(cell && cell.result && cell.result.columns) || []} 
+        text="Y axis"
+        onSelect={(column, k) => setStyle(prev => Object.assign({}, prev, {y: {name: column, idx: k}}))}  
+      />
     </div>
   )
 }
 
-function NotebookCellToolbar({run, style, setStyle}) {
+function NotebookCellToolbar({cell, run, setStyle}) {
   return (
     <div className='notebook-cell-status-bar'>
       <Button icon='fa-play' onClick={run}>
         Run
       </Button>
       <Selector 
+        cell={cell}
         choices={['Table', 'Dashboard']}
-        onChoice={(choice) => {
-          setStyle(choice)
-        }}
+        setStyle={setStyle}
       />
     </div>
   )
 }
 
-function NotebookCell({api, query, datasource, setQuery, result, setResult, style, setStyle, onCtrlEnter}) {
-  const onKeyDown = QueryEditorKeyHandler("  ", (q) => {
-    execSql(api, query, datasource, setResult, setResult)
-    onCtrlEnter()
-  })
+function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onCtrlEnter}) {
+  console.log(cell)
   return (
     <div>
       <CodeEditor 
-        code={query} 
+        code={cell.query} 
         setCode={setQuery}
       />
       <NotebookCellToolbar 
-        run={() => execSql(api, query, datasource, setResult, setResult)}
-        style={style}
-        setStyle={setStyle}
+        run={() => execSql(api, cell.query, datasource, setResult, setResult)}
+        cell={cell}
+        setStyle={style => {
+          console.log(style)
+          setStyle(style)
+        }}
       />
-      {result.columns &&   <Table 
-        data={result}
+      {cell.result.columns && cell.style && cell.style.type === 'Table' && <Table 
+        data={cell.result}
       />}
-      {result.error && <span>{result && result.error}</span>}
+      {cell.result && cell.style && cell.style.type === 'Dashboard' && <Dashboard 
+        data={(cell.result && cell.style && cell.style.y && cell.result.rows && cell.result.rows.map(row => row[cell.style.y.idx])) || []}
+      />}
+      {cell.result.error && <span>{cell.result && cell.result.error}</span>}
     </div>
   )
 }
@@ -117,7 +128,19 @@ function NotebookCell({api, query, datasource, setQuery, result, setResult, styl
 export function Notebook({api, datasource, show, data}) {
   const [state, setState] = useState({cells: {}})
   const updateCell = (cell, property) => value => {
-    setState(prev => Object.assign({}, prev, Object.assign(prev.cells, {}, {[cell.id]: Object.assign({}, cell, {[property]: value})})))
+    console.log(typeof value)
+    const f = (typeof value !== 'function') ? () => value : value
+    console.log(property, f)
+    setState(
+      prev => {
+        const res = Object.assign(
+          {}, 
+          prev, 
+          Object.assign({}, prev.cells, {[cell.id]: Object.assign(prev.cells[cell.id], {}, {[property]: f(prev.cells[cell.id][property])})})
+        )
+        return res
+      }
+    )
   }
   const addCell = () => {
     const newCellID = uniqid()
@@ -151,10 +174,9 @@ export function Notebook({api, datasource, show, data}) {
           datasource={state.datasource_id}
           cell={cell}
           setCell={() => {}}
-          query={cell.query}
-          result={cell.result}
           setQuery={updateCell(cell, 'query')}
           setResult={updateCell(cell, 'result')}
+          setStyle={updateCell(cell, 'style')}
           onCtrlEnter={idx >= state.cells.length - 1 ? addCell : () => {}}
         />)}
       </div>
