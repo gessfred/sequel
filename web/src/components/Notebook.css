@@ -1,4 +1,18 @@
 .notebook-cell-status-bar {
   display: flex;
   flex-direction: row;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notebook-cell-duration  {
+  margin-left: 16px;
+  margin-right: 16px;
+}
+
+.notebook-cell-status-bar-left{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }

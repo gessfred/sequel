@@ -22,28 +22,25 @@ import (
 	"github.com/rs/cors"
 )
 
-type Result struct {
-	Columns []string        `json:"columns"`
-	Rows    [][]interface{} `json:"rows"`
-}
-
 type RequestBody struct {
 	Query        string `json:"query"`
 	DataSourceID string `json:"datasource_id"`
 }
 
-func executeQuery(db *sql.DB, query string) ([]string, [][]interface{}, error) {
+func executeQuery(db *sql.DB, query string) (*CellResult, error) {
 	// Execute the query
+	start := time.Now()
 	rows, err := db.Query(query)
+	duration := float64(time.Since(start).Nanoseconds()) / float64(time.Second)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer rows.Close()
 
 	// Get the column names
 	columns, err := rows.Columns()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Create a slice to hold the column values
@@ -61,7 +58,7 @@ func executeQuery(db *sql.DB, query string) ([]string, [][]interface{}, error) {
 		// Scan the row into the slice of values
 		err := rows.Scan(valuePtrs...)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
 		// Create a slice to hold the current row's values
@@ -79,10 +76,14 @@ func executeQuery(db *sql.DB, query string) ([]string, [][]interface{}, error) {
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return columns, resultRows, nil
+	return &CellResult{
+		Columns:  columns,
+		Rows:     resultRows,
+		Duration: duration,
+	}, nil
 }
 
 func DecodeRequestBody(r *http.Request, v interface{}) error {
@@ -154,17 +155,11 @@ func queryHandler(w http.ResponseWriter, r *http.Request, datastore *Datastore) 
 		return
 	}
 
-	columns, rows, err := executeQuery(db, query)
+	result, err := executeQuery(db, query)
 	if err != nil {
 		fmt.Println(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
-	}
-
-	// Create a Result struct
-	result := Result{
-		Columns: columns,
-		Rows:    rows,
 	}
 
 	// Set the response Content-Type to application/json

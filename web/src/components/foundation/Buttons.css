@@ -12,3 +12,8 @@ button:hover {
 background-color: #e1ddee;
 color: #48368f;
 }
+
+.button-content {
+  display: flex;
+  align-items: center;
+}

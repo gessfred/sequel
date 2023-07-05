@@ -55,36 +55,56 @@ type User struct {
 
 // DataSource represents a data source with a name, connection string, and engine name
 type DataSource struct {
-	Owner            string `json:"owner" bson:"owner"`
-	Name             string `json:"name" bson:"name"`
-	ID               string `json:"datasource_id" bson:"datasource_id"`
-	ConnectionString string `json:"connection_string" bson:"connection_string"`
-	Engine           string `json:"engine" bson:"engine"`
+	Owner            string     `json:"owner" bson:"owner"`
+	Name             string     `json:"name" bson:"name"`
+	ID               string     `json:"datasource_id" bson:"datasource_id"`
+	ConnectionString string     `json:"connection_string" bson:"connection_string"`
+	Engine           string     `json:"engine" bson:"engine"`
+	CreationDate     *time.Time `json:"creation_date" bson:"creation_date"`
+	LastConnection   *time.Time `json:"last_connection" bson:"last_connection"`
+}
+
+type DataSourceMetadata struct {
+	Relations []RelationMetadata `json:"relations"`
+}
+
+type RelationMetadata struct {
+	Name    string `json:"name" bson:"name"`
+	Schema  string `json:"schema" bson:"schema"`
+	Columns []ColumnMetadata
+}
+
+type ColumnMetadata struct {
+	ColumnName string `json:"column_name"`
+	DataType   string `json:"dtype"`
 }
 
 // Notebook represents a notebook with a name, last edited date, and a list of cells
 type Notebook struct {
-	Owner          string    `json:"owner" bson:"owner"`
-	Name           string    `json:"name" bson:"name"`
-	DataSourceID   string    `json:"datasource_id" bson:"datasource_id"`
-	DataSourceName string    `json:"datasource_name" bson:"datasource_name"`
-	CreationDate   time.Time `json:"creation_date" bson:"creation_date"`
-	LastEdited     time.Time `json:"last_edited" bson:"last_edited"`
-	Cells          []Cell    `json:"cells" bson:"cells"`
+	Owner          string     `json:"owner" bson:"owner"`
+	Name           string     `json:"name" bson:"name"`
+	DataSourceID   string     `json:"datasource_id" bson:"datasource_id"`
+	DataSourceName string     `json:"datasource_name" bson:"datasource_name"`
+	CreationDate   *time.Time `json:"creation_date" bson:"creation_date"`
+	LastEdited     time.Time  `json:"last_edited" bson:"last_edited"`
+	Cells          []Cell     `json:"cells" bson:"cells"`
 }
 
 // Cell represents a cell in the notebook with a SQL query and result
 type Cell struct {
-	Query    string     `json:"query" bson:"query"`
-	Result   CellResult `json:"result" bson:"result"`
-	ID       string     `json:"id" bson:"id"`
-	Position int        `json:"position" bson:"position"`
+	Query        string     `json:"query" bson:"query"`
+	Result       CellResult `json:"result" bson:"result"`
+	ID           string     `json:"id" bson:"id"`
+	Position     int        `json:"position" bson:"position"`
+	LastEdited   time.Time  `json:"last_edited" bson:"last_edited"`
+	CreationDate *time.Time `json:"creation_date" bson:"creation_date"`
 }
 
 // CellResult represents the result of executing a SQL query in a cell
 type CellResult struct {
-	Columns []string        `json:"columns" bson:"columns"`
-	Rows    [][]interface{} `json:"rows" bson:"rows"`
+	Columns  []string        `json:"columns" bson:"columns"`
+	Rows     [][]interface{} `json:"rows" bson:"rows"`
+	Duration float64         `json:"duration" bson:"duration"` // query duration
 }
 
 // Datastore represents the MongoDB datastore
@@ -162,6 +182,11 @@ func (d *Datastore) WriteUser(user *User) error {
 func (d *Datastore) WriteDataSource(dataSource *DataSource) error {
 	filter := bson.M{"name": dataSource.Name}
 
+	if dataSource.CreationDate == nil {
+		now := time.Now()
+		dataSource.CreationDate = &now
+	}
+
 	opts := options.Replace().SetUpsert(true)
 
 	_, err := d.database.Collection("datasources").ReplaceOne(context.Background(), filter, dataSource, opts)
@@ -174,6 +199,11 @@ func (d *Datastore) WriteDataSource(dataSource *DataSource) error {
 
 // UpsertNotebook upserts a notebook in the "notebooks" collection
 func (d *Datastore) WriteNotebook(notebook *Notebook) error {
+	if notebook.CreationDate == nil {
+		now := time.Now()
+		notebook.CreationDate = &now
+	}
+	notebook.LastEdited = time.Now()
 	filter := bson.M{"name": notebook.Name}
 
 	opts := options.Replace().SetUpsert(true)

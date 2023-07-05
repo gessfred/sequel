@@ -67,11 +67,18 @@ function NotebookToolbar({data, newCell, saveNotebook, metadata, setData}) {
   )
 }
 //TODO rename styleselector
-function Selector({cell, choices, setStyle}) {
+function DashboardTypeSelector({cell, choices, setStyle}) {
   console.log(cell)
   return (
     <div className='selector-container'>
       {choices.map(choice => <Button onClick={() => setStyle({type: choice})}>{choice}</Button>)}
+    </div>
+  )
+}
+
+function DashboardSettings({cell, setStyle}) {
+  return (
+    <div className='selector-container'>
       <span>X</span>
       <Dropdown 
         items={(cell && cell.result && cell.result.columns) || []} 
@@ -88,23 +95,35 @@ function Selector({cell, choices, setStyle}) {
   )
 }
 
-function NotebookCellToolbar({cell, run, setStyle}) {
+function NotebookCellToolbar({cell, run, isComputing, setStyle}) {
   return (
     <div className='notebook-cell-status-bar'>
-      <Button icon='fa-play' onClick={run}>
-        Run
-      </Button>
-      <Selector 
+      <div className='notebook-cell-status-bar-left'>
+        <Button icon='fa-play' onClick={run} isLoading={isComputing}>
+          Run
+        </Button>
+        <span className='notebook-cell-duration'>{cell.result && Math.round(cell.result.duration)} s</span>
+        <DashboardTypeSelector 
+          cell={cell}
+          choices={['Table', 'Dashboard']}
+          setStyle={setStyle}
+        />
+      </div>
+      {(cell && cell.style && cell.result) && <DashboardSettings 
         cell={cell}
-        choices={['Table', 'Dashboard']}
         setStyle={setStyle}
-      />
+      />}
     </div>
   )
 }
 
 function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onCtrlEnter}) {
-  console.log(cell)
+  const [state, setState] = useState({isComputing: false}) 
+  console.log(cell, state)
+  const onQueryResult = res => {
+    setResult(res)
+    setState({isComputing: false})
+  }
   return (
     <div>
       <CodeEditor 
@@ -112,7 +131,11 @@ function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onC
         setCode={setQuery}
       />
       <NotebookCellToolbar 
-        run={() => execSql(api, cell.query, datasource, setResult, setResult)}
+        run={() => {
+          execSql(api, cell.query, datasource, onQueryResult, onQueryResult)
+          setState({isComputing: true})
+        }}
+        isComputing={state.isComputing}
         cell={cell}
         setStyle={style => {
           console.log(style)
