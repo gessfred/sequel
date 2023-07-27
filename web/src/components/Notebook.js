@@ -102,7 +102,9 @@ function NotebookCellToolbar({cell, run, isComputing, setStyle}) {
         <Button icon='fa-play' onClick={run} isLoading={isComputing}>
           Run
         </Button>
-        <span className='notebook-cell-duration'>{cell.result && Math.round(cell.result.duration)} s</span>
+        <span className='notebook-cell-duration'>
+          {cell.result && Math.round(cell.result.duration)} s
+        </span>
         <DashboardTypeSelector 
           cell={cell}
           choices={['Table', 'Dashboard']}

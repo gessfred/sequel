@@ -12,7 +12,7 @@ export function CodeEditor({code, setCode}) {
     <CodeMirror 
       value={code}
       onChange={(code, view) => setCode(code)}
-      height='200px'
+      height='500px'
       basicSetup={{lineNumbers: false}}
       extensions={[sql()]}
     />
