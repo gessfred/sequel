@@ -1,0 +1,22 @@
+
+.sidebar-wrapper {
+  display: flex;
+  flex-direction: row;
+
+}
+
+.sidebar-container {
+  width: 240px;
+  overflow: scroll;
+  height: calc(100vh - 128px);
+}
+
+.sidebar-element {
+  display: flex;
+  flex-direction: column;
+  margin: 8px;
+}
+
+.sidebar-outside {
+  width: 100%;
+}

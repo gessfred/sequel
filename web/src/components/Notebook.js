@@ -8,7 +8,7 @@ import { Dashboard } from './sql/Dashboard'
 import { Dropdown } from './foundation/Dropdown'
 
 function execSql(api, query, datasource, onSuccess, onError) {
-  console.log(query, datasource)
+  console.log(query, datasource, {"query": query, datasource_id: datasource})
   api.post('/query', {"query": query, datasource_id: datasource}, {
     json: (j) => {
     console.log(j)

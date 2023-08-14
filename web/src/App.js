@@ -5,6 +5,9 @@ import { Button } from './components/foundation/Buttons'
 import { Notebook } from './components/Notebook'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { faChevronLeft, faPlay } from '@fortawesome/free-solid-svg-icons'
+import { CodeEditor } from './components/foundation/Code'
+import { Table } from './components/sql/Table'
+import { Worksheet } from './components/sql/Worksheet'
 
 library.add(faChevronLeft, faPlay)
 // url = "https://sequel.gessfred.xyz"
@@ -29,7 +32,7 @@ function API(url, user) {
     if(callbacks && callbacks.error !== undefined) {
       response = response.catch(err => {
         console.log(err)
-        err.then(e => callbacks.error({error: e}))
+        callbacks.error({error: err})
       })
     }
     return response
@@ -86,12 +89,15 @@ function Card({children}) {
   )
 }
 
-function DatasourceCard({name, open}) {
+function DatasourceCard({name, open, createWs, createNb}) {
   return (
     <Card>
       <span className='card-title'>{name}</span>
-      <Button onClick={open}>
+      <Button onClick={createNb}>
         Create notebook
+      </Button>
+      <Button onClick={createWs}>
+        Worksheet
       </Button>
     </Card>
   )
@@ -120,7 +126,11 @@ function MainMenu({show, open, createDataSource, api}) {
     <div className='main-container'>
       <h2>Datasources</h2>
       <div className='main-content-container'>
-        {state.datasources.map(ds => <DatasourceCard name={ds.name} open={() => open({name: 'Untitled', datasource_id: ds.datasource_id, datasource_name: ds.name, cells: []})} />)}
+        {state.datasources.map(ds => <DatasourceCard 
+          name={ds.name} 
+          createNb={() => open({pageid: 'notebook', notebook: {name: 'Untitled', datasource_id: ds.datasource_id, datasource_name: ds.name, cells: []}})}
+          createWs={() => open({pageid: 'worksheet', worksheet: {name: 'Untitled', datasource_id: ds.datasource_id}})}
+        />)}
       </div>
       <button onClick={createDataSource}>Create</button>
       <h2>Notebooks</h2>
@@ -248,14 +258,24 @@ function App() {
         <MainMenu 
           api={api}
           show={state.pageid === 'main'} 
-          open={(nb) => setStateProperty({pageid: 'notebook', notebook: nb})} 
+          open={(nb) => setStateProperty(nb)} 
           createDataSource={() => setStateProperty({pageid: 'datasource-creator'})}
         />
-        <Notebook api={api} datasource={"postgresqsl"} show={state.pageid === 'notebook'} data={state.notebook} />
+        <Notebook 
+          api={api} 
+          datasource={"postgresql"} 
+          show={state.pageid === 'notebook'} 
+          data={state.notebook} />
         <DatasourceEditor 
           show={state.pageid === 'datasource-creator'} 
           create={() => setStateProperty({pageid: 'notebook'})} 
           api={api}
+        />
+        <Worksheet
+          api={api}
+          datasource={"postgresql"}
+          show={state.pageid === 'worksheet'}
+          data={state.worksheet}
         />
       </div>
     </div>
