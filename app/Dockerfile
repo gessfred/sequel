@@ -6,8 +6,9 @@ COPY ./package.json /app
 RUN npm install
 COPY ./src ./src
 COPY ./public/ ./public/
-RUN NODE_OPTIONS=--openssl-legacy-provider REACT_APP_API_URL="https://sequel.gessfred.xyz/api" npm run build
-RUN ls build/static && echo 'Build output [OK]'
+COPY *.config.js .
+COPY index.html .
+RUN REACT_APP_API_URL="https://sequel.gessfred.xyz/api" npm run build
 RUN rm -rf node_modules/
 COPY ./serve.sh .
 RUN chmod u+wrx serve.sh
