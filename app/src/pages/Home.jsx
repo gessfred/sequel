@@ -1,7 +1,9 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 import { Disclosure, Menu, Transition } from '@headlessui/react'
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import ConnectionEditor from './ConnectionEditor'
+import DataSourceGrid from '../components/DataSourceGrid'
+import FilesExplorer from '../components/FilesExplorer'
 
 const user = {
     name: 'Tom Cook',
@@ -26,8 +28,15 @@ const user = {
     return classes.filter(Boolean).join(' ')
   }
   
-  export default function Home({show}) {
-    const [state, setState] = useState({showConnectionEditor: false})
+  export default function Home({show, api, createWorksheet}) {
+    const [state, setState] = useState({notebooks: [], datasources: [], showConnectionEditor: false, worksheets: []})
+    useEffect(() => {
+      if(api.auth.authenticated) {
+        api.userdata.datasources.read(datasources => setState(prev => Object.assign({}, prev, {datasources: datasources || []})))
+        api.userdata.notebooks.read(nbs => setState(prev => Object.assign({}, prev, {notebooks: nbs || []})))
+      }
+    }, [api.auth.authenticated])
+    console.log(state)
     if(!show) return <span></span>
     return (
       <>
@@ -194,8 +203,17 @@ const user = {
           </header>
           <main>
             <div className="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
+              <h1>Data Sources</h1>
+              <div className='grid'>
+                <DataSourceGrid  
+                  datasources={state.datasources} 
+                  createWorksheet={createWorksheet}
+                />
+              </div>
               <button className='bg-gray'>Create</button>
-              <ConnectionEditor show={true} onHide={() => {}} />
+              <ConnectionEditor show={false} onHide={() => {}} />
+              <h1>Files</h1>
+              <FilesExplorer worksheets={state.worksheets}  />
             </div>
           </main>
         </div>

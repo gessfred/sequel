@@ -3,6 +3,7 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 import Home from './pages/Home'
+import Worksheet from './pages/Worksheet'
 
 function API(url, user) {
   const call = (verb, route, callbacks, body) => {
@@ -209,15 +210,6 @@ function Signin({api, show, onLogin}) {
   )
 }
 
-/*function Home({show}) {
-  if(!show) return <span></span>
-  return (
-    <div>
-      <h1>Home</h1>
-    </div>
-  )
-}*/
-
 function App() {
   const [count, setCount] = useState(0)
   const [state, setState] = useState({pageid: 'login'})
@@ -239,8 +231,14 @@ function App() {
           setState({user: user, pageid: 'main'})
         }}
       />
-      <Home show={state.pageid === 'main'} 
-        
+      <Home 
+        show={state.pageid === 'main'} 
+        api={api}
+        createWorksheet={() => setStateProperty({pageid: 'worksheet'})}
+      />
+      <Worksheet 
+        show={state.pageid === 'worksheet'}
+        api={api}
       />
     </>
   )
