@@ -212,8 +212,8 @@ const user = {
               </div>
               <button className='bg-gray'>Create</button>
               <ConnectionEditor show={false} onHide={() => {}} />
-              <h1>Files</h1>
-              <FilesExplorer worksheets={state.worksheets}  />
+              {false && <h1>Files</h1>}
+              {false && <FilesExplorer worksheets={state.worksheets}  />}
             </div>
           </main>
         </div>

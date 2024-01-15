@@ -14,6 +14,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline'
 import { ChevronDownIcon, MagnifyingGlassIcon } from '@heroicons/react/20/solid'
+import Table from "../components/Table"
 
 const navigation = [
   { name: 'Dashboard', href: '#', icon: HomeIcon, current: true },
@@ -346,11 +347,37 @@ function Sidebar({children}) {
   )
 }
 
-export default function Worksheet({show}) {
+function execSql(api, query, datasource, onSuccess, onError) {
+  console.log(query, datasource, {"query": query, datasource_id: datasource})
+  api.post('/query', {"query": query, datasource_id: datasource.datasource_id}, {
+    json: (j) => {
+    console.log(j)
+    onSuccess(j)
+
+    },
+    error: err => {
+      console.log(err)
+      onError && onError(err)
+    }
+  })
+}
+
+
+export default function Worksheet({api, show, datasource}) {
+  const [state, setState] = useState({code: "select * from hello_world"})
+  const setStateProperty = property => value => setState(prev => Object.assign({}, prev, {[property]: value}))
   if(!show) return <span></span>
   return (
     <Sidebar>
-      <CodeEditor code="select * from hello_world" />
+      <CodeEditor code={state.code} setCode={setStateProperty('code')} onCtrlEnter={() => {
+         console.log("invoking exec sql with", datasource)
+        execSql(api, state.code, datasource, setStateProperty('result'), console.log)
+      }} />
+      {state.result && <Table 
+        columns={state.result.columns}
+        rows={state.result.rows} 
+        
+      />}
     </Sidebar>
   )
 }

@@ -221,6 +221,7 @@ function App() {
       setStateProperty({user: JSON.parse(cachedUser), pageid: 'main'})
     }
   }, [])
+  console.log('state')
   return (
     <>
       <Signin 
@@ -234,11 +235,12 @@ function App() {
       <Home 
         show={state.pageid === 'main'} 
         api={api}
-        createWorksheet={() => setStateProperty({pageid: 'worksheet'})}
+        createWorksheet={(ds) => setStateProperty({pageid: 'worksheet', datasource: ds})}
       />
       <Worksheet 
         show={state.pageid === 'worksheet'}
         api={api}
+        datasource={state.datasource}
       />
     </>
   )
