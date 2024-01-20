@@ -4,39 +4,15 @@ import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import Dropdown from '../components/Dropdown'
 import uniqid from 'uniqid'
 
-const engines = [
-  {
-    id: 1,
+const engines = {
+  postgres: {
+    id: 'postgres',
     name: 'PostgresSQL',
-    avatar:
-      'https://wiki.postgresql.org/images/3/30/PostgreSQL_logo.3colors.120x120.png',
-  },
-  {
-    id: 2,
-    name: 'Arlene Mccoy',
-    avatar:
-      'https://images.unsplash.com/photo-1550525811-e5869dd03032?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-  },
-  {
-    id: 3,
-    name: 'Devon Webb',
-    avatar:
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2.25&w=256&h=256&q=80',
-  },
-  {
-    id: 4,
-    name: 'Tom Cook',
-    avatar:
-      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-  },
-  {
-    id: 5,
-    name: 'Tanya Fox',
-    avatar:
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+    avatar: 'https://wiki.postgresql.org/images/3/30/PostgreSQL_logo.3colors.120x120.png',
   }
-]
+}
 
+export { engines }
 
 export function Input({name, value, setValue}) {
     const hint = false
@@ -63,13 +39,13 @@ export function Input({name, value, setValue}) {
 }
   
 export default function ConnectionEditor({api, show, onHide, onCreate}) {
-  const [open, setOpen] = useState(true)
-  const [connection, setConnection] = useState({engine: engines[0]})
+  const [connection, setConnection] = useState({engine: Object.values(engines)[0]})
   const cancelButtonRef = useRef(null)
   const setConnectionProperty = property => value => setConnection(prev => Object.assign({}, prev, {[property]: value}))
   const createConnection = () => {
-    api.userdata.datasources.write(Object.assign({}, connection, {datasource_id: uniqid()}))
+    api.userdata.datasources.write(Object.assign({}, connection, {datasource_id: uniqid()}, {engine: connection.engine.id}), {success: () => onCreate()})
   }
+  console.log('connection', connection)
   return (
     <Transition.Root show={show} as={Fragment}>
       <Dialog as="div" className="relative z-10" initialFocus={cancelButtonRef} onClose={onHide}>
@@ -107,7 +83,7 @@ export default function ConnectionEditor({api, show, onHide, onCreate}) {
                         New connection
                       </Dialog.Title>
                       <div className="mt-2">
-                        <Dropdown name="Engine" items={engines} selected={connection.engine} setSelected={setConnectionProperty('engine')} />
+                        <Dropdown name="Engine" items={Object.values(engines)} selected={connection.engine} setSelected={setConnectionProperty('engine')} />
                         <Input name="Name" value={connection.name} setValue={setConnectionProperty('name')} />
                         <Input name="Connection String" value={connection.connection_string} setValue={setConnectionProperty('connection_string')} />
                       </div>

@@ -59,7 +59,7 @@ function API(url, user) {
             json: callback
           })
         },
-        write: (datasource) => post("/datasources", Object.assign({}, datasource, {owner: user.user_email}))
+        write: (datasource, hook) => post("/datasources", Object.assign({}, datasource, {owner: user.user_email}), hook)
       },
       notebooks: {
         read: (callback) => {
