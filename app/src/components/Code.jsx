@@ -20,6 +20,7 @@ function extractTextBetweenSemicolons(text, caretPos) {
 }
 
 export function CodeEditor({code, setCode, onCtrlEnter}) {
+  const editor = useRef()
   const handleCmdEnter = (event) => {
     console.log('cut @', window.getSelection())
     const {keyCode, ctrlKey}  = event
@@ -32,13 +33,18 @@ export function CodeEditor({code, setCode, onCtrlEnter}) {
       console.log(keyCode)
     }
   }
+  useEffect(() => {
+    console.log('REF', editor.current)
+  }, [editor])
   return (
     <CodeMirror 
       value={code}
       onChange={(code, view) => {
-        console.log(code, view)
+        //console.log(code, view)
+        console.log("exe", window.getSelection().baseNode.nodeValue, '->', extractTextBetweenSemicolons(code, window.getSelection().baseOffset))
         setCode(code)
       }}
+      ref={editor}
       height='500px'
       basicSetup={{lineNumbers: false}}
       extensions={[sql()]}
@@ -47,7 +53,7 @@ export function CodeEditor({code, setCode, onCtrlEnter}) {
           'Ctrl-Enter': (cm) => console.log("ctrl+enter")
         }}}
       onKeyDown={handleCmdEnter}
-    
+        onSelect={e => console.log('SELECT', e)}
     />
   )
 }

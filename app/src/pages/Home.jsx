@@ -28,7 +28,7 @@ const user = {
     return classes.filter(Boolean).join(' ')
   }
   
-  export default function Home({show, api, createWorksheet}) {
+  export default function Home({show, api, createWorksheet,  onOpenFile}) {
     const [state, setState] = useState({notebooks: [], datasources: [], showConnectionEditor: false, worksheets: []})
     useEffect(() => {
       if(api.auth.authenticated) {
@@ -212,8 +212,12 @@ const user = {
               </div>
               <button className='bg-gray'>Create</button>
               <ConnectionEditor show={false} onHide={() => {}} />
-              {false && <h1>Files</h1>}
-              {false && <FilesExplorer worksheets={state.worksheets}  />}
+              <h1>Files</h1>
+              <FilesExplorer 
+                worksheets={state.worksheets} 
+                files={state.notebooks}  
+                onOpen={onOpenFile}
+              />
             </div>
           </main>
         </div>

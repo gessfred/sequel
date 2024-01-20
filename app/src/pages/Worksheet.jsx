@@ -371,7 +371,7 @@ export default function Worksheet({api, show, datasource}) {
     <Sidebar>
       <CodeEditor code={state.code} setCode={setStateProperty('code')} onCtrlEnter={() => {
          console.log("invoking exec sql with", datasource)
-        execSql(api, state.code, datasource, setStateProperty('result'), console.log)
+        //execSql(api, state.code, datasource, setStateProperty('result'), console.log)
       }} />
       {state.result && <Table 
         columns={state.result.columns}

@@ -4,6 +4,8 @@ import viteLogo from '/vite.svg'
 import './App.css'
 import Home from './pages/Home'
 import Worksheet from './pages/Worksheet'
+import { Notebook } from './pages/Notebook'
+import Layout from './components/Layout'
 
 function API(url, user) {
   const call = (verb, route, callbacks, body) => {
@@ -210,6 +212,7 @@ function Signin({api, show, onLogin}) {
   )
 }
 
+
 function App() {
   const [count, setCount] = useState(0)
   const [state, setState] = useState({pageid: 'login'})
@@ -232,16 +235,29 @@ function App() {
           setState({user: user, pageid: 'main'})
         }}
       />
-      <Home 
-        show={state.pageid === 'main'} 
-        api={api}
-        createWorksheet={(ds) => setStateProperty({pageid: 'worksheet', datasource: ds})}
-      />
-      <Worksheet 
-        show={state.pageid === 'worksheet'}
-        api={api}
-        datasource={state.datasource}
-      />
+      <Layout
+        setMainPage={(page) => setStateProperty({pageid: page})}
+      >
+        <Home 
+          show={state.pageid === 'main'} 
+          api={api}
+          createWorksheet={(ds) => setStateProperty({pageid: 'worksheet', datasource: ds})}
+          onOpenFile={(file) => {
+            console.log('open',file)
+            setState(prev => Object.assign({}, prev, file, {pageid: Object.keys(file)[0]}))
+          }}
+        />
+        <Worksheet 
+          show={state.pageid === 'worksheet'}
+          api={api}
+          datasource={state.datasource}
+        />
+        <Notebook 
+            api={api} 
+            datasource={"postgresql"} 
+            show={state.pageid === 'notebook'} 
+            data={state.notebook} />
+      </Layout>
     </>
   )
 }
