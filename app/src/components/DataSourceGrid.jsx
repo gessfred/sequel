@@ -20,7 +20,7 @@ function parseConnectionString(connectionString) {
   return Object.fromEntries(connectionString?.split(' ').map(kv => kv.split('=')))
 }
 
-function DatasourceCard({ds, createWorksheet, editDataSource}) {
+function DatasourceCard({ds, createNotebook, editDataSource}) {
   const connection = parseConnectionString(ds.connection_string)
   return (
     <li key={ds} className="col-span-1 divide-y divide-gray-200 rounded-lg bg-white shadow">
@@ -41,7 +41,7 @@ function DatasourceCard({ds, createWorksheet, editDataSource}) {
           <div className="flex w-0 flex-1">
             <button
               className="relative -mr-px inline-flex w-0 flex-1 items-center justify-center gap-x-3 rounded-bl-lg border border-transparent py-4 text-sm font-semibold text-gray-900"
-              onClick={() => createWorksheet(ds)}
+              onClick={() => createNotebook(ds)}
             >
               <CodeBracketIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
               Notebook
@@ -62,11 +62,11 @@ function DatasourceCard({ds, createWorksheet, editDataSource}) {
   )
 }
 
-export default function DataSourceGrid({datasources, createWorksheet, editDataSource}) {
+export default function DataSourceGrid({datasources, createNotebook, editDataSource}) {
 
   return (
     <ul role="list" className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {(datasources || []).map((ds) => <DatasourceCard ds={ds} createWorksheet={createWorksheet} editDataSource={editDataSource} />)}
+      {(datasources || []).map((ds) => <DatasourceCard ds={ds} createNotebook={createNotebook} editDataSource={editDataSource} />)}
     </ul>
   )
 }

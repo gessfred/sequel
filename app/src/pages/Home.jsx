@@ -29,7 +29,7 @@ const user = {
     return classes.filter(Boolean).join(' ')
   }
   
-  export default function Home({show, api, createWorksheet,  onOpenFile}) {
+  export default function Home({show, api, createNotebook,  onOpenFile}) {
     const [state, setState] = useState({notebooks: [], datasources: [], showConnectionEditor: false, worksheets: []})
     const setStateProperty = values => setState(p => Object.assign({}, p, values))
     useEffect(() => {
@@ -57,7 +57,7 @@ const user = {
               <div className='grid'>
                 <DataSourceGrid  
                   datasources={state.datasources} 
-                  createWorksheet={createWorksheet}
+                  createNotebook={createNotebook}
                 />
               </div>
               <button

@@ -241,7 +241,7 @@ function App() {
         <Home 
           show={state.pageid === 'main'} 
           api={api}
-          createWorksheet={(ds) => setStateProperty({pageid: 'worksheet', datasource: ds})}
+          createNotebook={(ds) => setStateProperty({pageid: 'notebook', datasource: ds})}
           onOpenFile={(file) => {
             console.log('open',file)
             setState(prev => Object.assign({}, prev, file, {pageid: Object.keys(file)[0]}))
@@ -254,7 +254,7 @@ function App() {
         />
         <Notebook 
             api={api} 
-            datasource={"postgresql"} 
+            datasource={state.datasource} 
             show={state.pageid === 'notebook'} 
             data={state.notebook} />
       </Layout>
