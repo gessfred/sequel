@@ -76,13 +76,13 @@ export function NotebookHeader({datasource, datasources, addCell, onPublish}) {
         <div className="mt-1 flex flex-col sm:mt-0 sm:flex-row sm:flex-wrap sm:space-x-6">
           <div className="mt-2 flex items-center text-sm text-gray-500">
             <CircleStackIcon className="mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400" aria-hidden="true" />
-            Datasource
+            Datasource: {datasource || 'None'}
           </div>
-          <Dropdown 
+          {false && <Dropdown 
             items={[{avatar: '', name: ''}]}
             selected=''
             setSelected={() => {}}
-          />
+          />/*TODO */ }
           <div className="mt-2 flex items-center text-sm text-gray-500">
             <MapPinIcon className="mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400" aria-hidden="true" />
             Remote
@@ -304,9 +304,10 @@ export function Notebook({api, datasource, show, data}) {
   }
   useEffect(() => {
     console.log('datasource', datasource)
-      setState(Object.assign({}, data, {datasource_id: datasource?.datasource_id, cells: Object.fromEntries((data?.cells || []).map(cell => [cell.id, cell]))}))
+      setState(Object.assign({}, data, {datasource_id: datasource?.datasource_id || data?.datasource_id, cells: Object.fromEntries((data?.cells || []).map(cell => [cell.id, cell]))}))
   }, [data, datasource])
   console.log('state@Notebook', state)
+  console.log('data@notebook', data)
   if(!show) return <span />
   return (
     <div>
@@ -315,6 +316,7 @@ export function Notebook({api, datasource, show, data}) {
         onPublish={() => {
           api.userdata.notebooks.write(Object.assign({}, state, {cells: Object.values(state.cells)}))
         }}
+        datasource={state.datasource_id}
       />
       <div className=''>
         {Object.values(state.cells).map((cell, idx) => <NotebookCell 
