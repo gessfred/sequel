@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
+import { createTheme } from '@uiw/codemirror-themes'
 import { sql } from '@codemirror/lang-sql'
 
 function extractTextBetweenSemicolons(text, caretPos) {
@@ -18,6 +19,26 @@ function extractTextBetweenSemicolons(text, caretPos) {
   // Extract and return the text between the semicolons
   return text.substring(startPos, endPos);
 }
+
+const mainTheme = createTheme({
+  theme: 'light',
+  settings: {
+    background: '#ffffff',
+    backgroundImage: '',
+    foreground: 'black',
+    caret: '#5d00ff',
+    selection: '#036dd626',
+    selectionMatch: '#036dd626',
+    lineHighlight: 'none',
+    gutterBackground: 'white',
+    gutterForeground: '#8a919966',
+    gutterBorder: 'white',
+    gutterActiveForeground: 'white',
+    border: 'transparent',
+    outline: 'white',
+    fontWeight: 'bold'
+  },
+})
 
 export function CodeEditor({code, setCode, onCtrlEnter}) {
   const editor = useRef()
@@ -44,9 +65,17 @@ export function CodeEditor({code, setCode, onCtrlEnter}) {
         console.log("exe", window.getSelection().baseNode.nodeValue, '->', extractTextBetweenSemicolons(code, window.getSelection().baseOffset))
         setCode(code)
       }}
+      style={{outline: 'none', border: 'none'}}
+      className='border-transparent'
       ref={editor}
-      height='500px'
-      basicSetup={{lineNumbers: false}}
+      minHeight='100px'
+      basicSetup={{
+        lineNumbers: false,
+        highlightActiveLine: false,
+        foldGutter: false,
+        rectangularSelection: false
+      }}
+      theme={mainTheme}
       extensions={[sql()]}
       options={{
         extraKeys: {
@@ -54,6 +83,8 @@ export function CodeEditor({code, setCode, onCtrlEnter}) {
         }}}
       onKeyDown={handleCmdEnter}
         onSelect={e => console.log('SELECT', e)}
+      autoFocus={true}
+      onStatistics={(s) => console.log('statistics', s)}
     />
   )
 }

@@ -13,7 +13,7 @@ import {
 
 const navigation = [
   { name: 'Home', icon: HomeIcon, current: true, id: 'home' },
-  { name: 'Notebooks', href: '#', icon: UsersIcon, current: false },
+  { name: 'Notebooks', icon: UsersIcon, current: false, id: 'notebook' },
 ]
 const teams = [
   { id: 1, name: 'Heroicons', href: '#', initial: 'H', current: false },
@@ -96,7 +96,10 @@ export default function Layout({children, setMainPage, onSecondMenuChange}) {
                             {navigation.map((item) => (
                               <li key={item.name}>
                                 <button
-                                  onClick={() => setMainPage(item.id)}
+                                  onClick={() => {
+                                    console.log('set main page', item)
+                                    setMainPage(item.id)
+                                  }}
                                   className={classNames(
                                     item.current
                                       ? 'bg-gray-50 text-indigo-600'
@@ -118,7 +121,7 @@ export default function Layout({children, setMainPage, onSecondMenuChange}) {
                           </ul>
                         </li>
                         <li>
-                          <div className="text-xs font-semibold leading-6 text-gray-400">Your teams</div>
+                          <div className="text-xs font-semibold leading-6 text-gray-400">Datasource</div>
                           <ul role="list" className="-mx-2 mt-2 space-y-1">
                             {teams.map((team) => (
                               <li key={team.name}>
@@ -196,7 +199,7 @@ export default function Layout({children, setMainPage, onSecondMenuChange}) {
                   </ul>
                 </li>
                 <li>
-                  <div className="text-xs font-semibold leading-6 text-gray-400">Your teams</div>
+                  <div className="text-xs font-semibold leading-6 text-gray-400">Datasource</div>
                   <ul role="list" className="-mx-2 mt-2 space-y-1">
                     {teams.map((team) => (
                       <li key={team.name}>
@@ -261,7 +264,7 @@ export default function Layout({children, setMainPage, onSecondMenuChange}) {
         </div>
 
         <main className="py-10 lg:pl-72">
-          <div className="px-4 sm:px-6 lg:px-8">{children}</div>
+          <div className="px-4 sm:px-6 lg:px-8 px-2">{children}</div>
         </main>
       </div>
     </>

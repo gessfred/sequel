@@ -12,8 +12,10 @@ import {
   LinkIcon,
   MapPinIcon,
   PencilIcon,
+  CircleStackIcon
 } from '@heroicons/react/20/solid'
 import { Menu, Transition } from '@headlessui/react'
+import Dropdown from '../components/Dropdown'
 function execSql(api, query, datasource, onSuccess, onError) {
   console.log(query, datasource, {"query": query, datasource_id: datasource})
   api.post('/query', {"query": query, datasource_id: datasource}, {
@@ -64,7 +66,7 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
 }
 
-export function NotebookHeader({addCell, onPublish}) {
+export function NotebookHeader({datasource, datasources, addCell, onPublish}) {
   return (
     <div className="lg:flex lg:items-center lg:justify-between">
       <div className="min-w-0 flex-1">
@@ -73,9 +75,14 @@ export function NotebookHeader({addCell, onPublish}) {
         </h2>
         <div className="mt-1 flex flex-col sm:mt-0 sm:flex-row sm:flex-wrap sm:space-x-6">
           <div className="mt-2 flex items-center text-sm text-gray-500">
-            <BriefcaseIcon className="mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400" aria-hidden="true" />
-            Full-time
+            <CircleStackIcon className="mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400" aria-hidden="true" />
+            Datasource
           </div>
+          <Dropdown 
+            items={[{avatar: '', name: ''}]}
+            selected=''
+            setSelected={() => {}}
+          />
           <div className="mt-2 flex items-center text-sm text-gray-500">
             <MapPinIcon className="mr-1.5 h-5 w-5 flex-shrink-0 text-gray-400" aria-hidden="true" />
             Remote
@@ -212,26 +219,26 @@ function DashboardSettings({cell, setStyle}) {
   )
 }
 
-function NotebookCellToolbar({cell, run, isComputing, setStyle}) {
+
+function NotebookCellStatusBar({isComputing}) {
   return (
-    <div className='notebook-cell-status-bar'>
-      <div className='notebook-cell-status-bar-left'>
-        <Button icon='fa-play' onClick={run} isLoading={isComputing}>
-          Run
-        </Button>
-        <span className='notebook-cell-duration'>
-          {cell.result && Math.round(cell.result.duration)} s
-        </span>
-        <DashboardTypeSelector 
-          cell={cell}
-          choices={['Table', 'Dashboard']}
-          setStyle={setStyle}
-        />
+    <div>
+      {isComputing && (
+        <svg className={"animate-spin h-6 w-6 mr-3"} viewBox="0 0 24 24">
+          <path d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25"/><path d="M10.72,19.9a8,8,0,0,1-6.5-9.79A7.77,7.77,0,0,1,10.4,4.16a8,8,0,0,1,9.49,6.52A1.54,1.54,0,0,0,21.38,12h.13a1.37,1.37,0,0,0,1.38-1.54,11,11,0,1,0-12.7,12.39A1.54,1.54,0,0,0,12,21.34h0A1.47,1.47,0,0,0,10.72,19.9Z" />
+        </svg>
+      )}
+    </div>
+  )
+}
+
+function CellContainer({children}) {
+  return (
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 shadow-xl rounded-lg">
+      {/* We've used 3xl here, but feel free to try other max-widths based on your needs */}
+      <div className="mx-auto max-w-7xl space-y-4">
+        {children}
       </div>
-      {(cell && cell.style && cell.result) && <DashboardSettings 
-        cell={cell}
-        setStyle={setStyle}
-      />}
     </div>
   )
 }
@@ -245,7 +252,7 @@ function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onC
     setState({isComputing: false})
   }
   return (
-    <div>
+    <CellContainer>
       <CodeEditor 
         code={cell.query} 
         setCode={setQuery}
@@ -255,24 +262,15 @@ function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onC
           setState({isComputing: true})
         }}
       />
-      {false && <NotebookCellToolbar 
-        run={() => {
-          execSql(api, cell.query, datasource, onQueryResult, onQueryResult)
-          setState({isComputing: true})
-        }}
+      <NotebookCellStatusBar 
         isComputing={state.isComputing}
-        cell={cell}
-        setStyle={style => {
-          console.log(style)
-          setStyle(style)
-        }}
-      />}
+      />
       {cell.result.columns && ((cell.style && cell.style.type === 'Table' )|| true) && <Table 
         columns={cell.result.columns} 
         rows={cell.result.rows}
       />}
       {cell.result.error && <span>{JSON.stringify(cell?.result?.error)}</span>}
-    </div>
+    </CellContainer>
   )
 }
 /*
@@ -318,15 +316,6 @@ export function Notebook({api, datasource, show, data}) {
           api.userdata.notebooks.write(Object.assign({}, state, {cells: Object.values(state.cells)}))
         }}
       />
-      {false && <NotebookToolbar 
-        newCell={addCell}
-        metadata={{datasource: datasource}}
-        data={state}
-        setData={setState}
-        saveNotebook={() => {
-          api.userdata.notebooks.write(Object.assign({}, state, {cells: Object.values(state.cells)}))
-        }}
-      />}
       <div className=''>
         {Object.values(state.cells).map((cell, idx) => <NotebookCell 
           api={api}
@@ -342,3 +331,10 @@ export function Notebook({api, datasource, show, data}) {
     </div>
   )
 }
+
+
+/*
+saveNotebook={() => {
+          api.userdata.notebooks.write(Object.assign({}, state, {cells: Object.values(state.cells)}))
+        }}
+*/

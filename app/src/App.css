@@ -41,3 +41,7 @@
   color: #888;
 }
 */
+
+:root {
+  outline: none;
+}
