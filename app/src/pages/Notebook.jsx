@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/20/solid'
 import { Menu, Transition } from '@headlessui/react'
 import Dropdown from '../components/Dropdown'
+import Chart from '../components/Chart'
 function execSql(api, query, datasource, onSuccess, onError) {
   console.log(query, datasource, {"query": query, datasource_id: datasource})
   api.post('/query', {"query": query, datasource_id: datasource}, {
@@ -192,7 +193,7 @@ function CellContainer({children}) {
   return (
     <div className="mx-auto max-w-7xl px-8 sm:px-6 lg:px-8 py-12 shadow-lg rounded-lg">
       {/* We've used 3xl here, but feel free to try other max-widths based on your needs */}
-      <div className="mx-auto max-w-7xl space-y-16">
+      <div className="mx-auto max-w-7xl space-y-8">
         {children}
       </div>
     </div>
@@ -200,13 +201,12 @@ function CellContainer({children}) {
 }
 
 function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onRun}) {
-  const [state, setState] = useState({isComputing: false}) 
-  console.log('NotebookCell', cell, state, datasource)
+  const [state, setState] = useState({isComputing: false})
   const onQueryResult = res => {
-    console.log("RECEIVED result", res)
     setResult(res)
     setState({isComputing: false})
   }
+  const chartData = ((cell?.result?.rows) || []).map(row => Object.fromEntries(cell.result.columns.map((column, k) => [column, k > 0 ? Number.parseInt(row[k]) : row[k]])))
   return (
     <CellContainer>
       <CodeEditor 
@@ -225,6 +225,9 @@ function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onR
         columns={cell.result.columns} 
         rows={cell.result.rows}
       />}
+      <Chart 
+        data={chartData.reverse()}
+      />
       {cell.result.error && <span>{JSON.stringify(cell?.result?.error)}</span>}
     </CellContainer>
   )
@@ -255,13 +258,11 @@ export function Notebook({api, datasource, show, data}) {
   }
   const addCell = () => {
     const newCellID = uniqid()
-    console.log("new cell", newCellID)
     setState(prev => Object.assign({}, prev, {cells: Object.assign({}, prev.cells, {[newCellID]: {
       "query": "", "result": {}, "position": 1, "id": newCellID
     }})}))
   }
   useEffect(() => {
-    console.log('datasource', datasource)
       setState(Object.assign({}, data, {datasource_id: datasource?.datasource_id || data?.datasource_id, cells: Object.fromEntries((data?.cells || []).map(cell => [cell.id, cell]))}))
   }, [data, datasource])
   const cells = Object.values(state.cells)
@@ -287,20 +288,13 @@ export function Notebook({api, datasource, show, data}) {
           setQuery={updateCell(cell, 'query')}
           setResult={updateCell(cell, 'result')}
           setStyle={updateCell(cell, 'style')}
-          onRun={() => {
-            console.log("Add cell? Ctrl-Enter", idx, cells.length - 1)
-            if(idx >= cells.length - 1) {
-              console.log("Auto add cell")
-              addCell()
-            }
-          }}
+          onRun={idx >= cells.length - 1 ? addCell : () => {}}
         />)}
       </div>
     </div>
   )
 }
 
-//{idx >= state.cells.length - 1 ? addCell : () => {}}
 /*
 saveNotebook={() => {
           api.userdata.notebooks.write(Object.assign({}, state, {cells: Object.values(state.cells)}))

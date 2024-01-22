@@ -41,22 +41,16 @@ const mainTheme = createTheme({
 })
 
 export function CodeEditor({code, setCode, onCtrlEnter}) {
-  const editor = useRef()
   const handleCmdEnter = (event) => {
-    console.log('cut @', window.getSelection())
     const {keyCode, ctrlKey}  = event
     if(ctrlKey && keyCode == 13) {
-      console.log(window.getSelection().toString())
       const execode = extractTextBetweenSemicolons(code, window.getSelection().baseOffset)
-      console.log("EXEC", execode)
       onCtrlEnter()
     } else {
       console.log(keyCode)
     }
   }
-  useEffect(() => {
-    console.log('REF', editor.current)
-  }, [editor])
+  const onStatistics = () => {}
   return (
     <CodeMirror 
       value={code}
@@ -67,8 +61,7 @@ export function CodeEditor({code, setCode, onCtrlEnter}) {
       }}
       style={{outline: 'none', border: 'none'}}
       className='border-transparent'
-      ref={editor}
-      minHeight='100px'
+      minHeight='40px'
       basicSetup={{
         lineNumbers: false,
         highlightActiveLine: false,
@@ -84,7 +77,7 @@ export function CodeEditor({code, setCode, onCtrlEnter}) {
       onKeyDown={handleCmdEnter}
         onSelect={e => console.log('SELECT', e)}
       autoFocus={true}
-      onStatistics={(s) => console.log('statistics', s)}
+      onStatistics={onStatistics}
     />
   )
 }
