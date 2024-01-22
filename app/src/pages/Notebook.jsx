@@ -236,6 +236,10 @@ function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onR
 
 export function Notebook({api, datasource, show, data}) {
   const [state, setState] = useState({cells: {}})
+  const publishNotebook = () => {
+    console.log("publishing...")
+    api.userdata.notebooks.write(Object.assign({}, state, {cells: Object.values(state.cells)}))
+  }
   const updateCell = (cell, property) => value => {
     const f = (typeof value !== 'function') ? () => value : value
     setState(
@@ -260,17 +264,18 @@ export function Notebook({api, datasource, show, data}) {
     console.log('datasource', datasource)
       setState(Object.assign({}, data, {datasource_id: datasource?.datasource_id || data?.datasource_id, cells: Object.fromEntries((data?.cells || []).map(cell => [cell.id, cell]))}))
   }, [data, datasource])
-  console.log('state@Notebook', state)
-  console.log('data@notebook', data)
   const cells = Object.values(state.cells)
+  useEffect(() => {
+    if(show) {
+      publishNotebook()
+    }
+  }, [cells.length])
   if(!show) return <span />
   return (
     <div>
       <NotebookHeader 
         addCell={addCell}
-        onPublish={() => {
-          api.userdata.notebooks.write(Object.assign({}, state, {cells: Object.values(state.cells)}))
-        }}
+        onPublish={publishNotebook}
         datasource={state.datasource_id}
       />
       <div className=''>
