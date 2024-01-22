@@ -176,50 +176,6 @@ export function NotebookHeader({datasource, datasources, addCell, onPublish}) {
 }
 
 
-function NotebookToolbar({data, newCell, saveNotebook, metadata, setData}) {
-  return (
-    <div className='notebook-toolbar-container'>
-      <input 
-        type='text' 
-        value={data.name} 
-        onChange={e => setData(prev => Object.assign({}, prev, {name: e.target.value}))} 
-        className='notebook-name' />
-      <span className='notebook-toolbar-element'>{metadata.datasource}</span>
-      <button onClick={newCell}>Add cell</button>
-      <Button onClick={saveNotebook}>Save</Button>
-    </div>
-  )
-}
-//TODO rename styleselector
-function DashboardTypeSelector({cell, choices, setStyle}) {
-  console.log(cell)
-  return (
-    <div className='selector-container'>
-      {choices.map(choice => <Button onClick={() => setStyle({type: choice})}>{choice}</Button>)}
-    </div>
-  )
-}
-
-function DashboardSettings({cell, setStyle}) {
-  return (
-    <div className='selector-container'>
-      <span>X</span>
-      <Dropdown 
-        items={(cell && cell.result && cell.result.columns) || []} 
-        text={(cell && cell.style && cell.style.x && cell.style.x.name) || 'X axis'}
-        onSelect={(column, k) => setStyle(prev => Object.assign({}, prev, {x: {name: column, idx: k}}))}  
-      />
-      <span>Y</span>
-      <Dropdown 
-        items={(cell && cell.result && cell.result.columns) || []} 
-        text={(cell && cell.style && cell.style.y && cell.style.y.name) || 'Y axis'}
-        onSelect={(column, k) => setStyle(prev => Object.assign({}, prev, {y: {name: column, idx: k}}))}  
-      />
-    </div>
-  )
-}
-
-
 function NotebookCellStatusBar({isComputing}) {
   return (
     <div>
@@ -234,16 +190,16 @@ function NotebookCellStatusBar({isComputing}) {
 
 function CellContainer({children}) {
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 shadow-xl rounded-lg">
+    <div className="mx-auto max-w-7xl px-8 sm:px-6 lg:px-8 py-12 shadow-lg rounded-lg">
       {/* We've used 3xl here, but feel free to try other max-widths based on your needs */}
-      <div className="mx-auto max-w-7xl space-y-4">
+      <div className="mx-auto max-w-7xl space-y-16">
         {children}
       </div>
     </div>
   )
 }
 
-function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onCtrlEnter}) {
+function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onRun}) {
   const [state, setState] = useState({isComputing: false}) 
   console.log('NotebookCell', cell, state, datasource)
   const onQueryResult = res => {
@@ -257,7 +213,7 @@ function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onC
         code={cell.query} 
         setCode={setQuery}
         onCtrlEnter={() => {
-          console.log(cell.query)
+          onRun()
           execSql(api, cell.query, datasource, onQueryResult, onQueryResult)
           setState({isComputing: true})
         }}
@@ -281,9 +237,7 @@ function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onC
 export function Notebook({api, datasource, show, data}) {
   const [state, setState] = useState({cells: {}})
   const updateCell = (cell, property) => value => {
-    console.log(typeof value)
     const f = (typeof value !== 'function') ? () => value : value
-    console.log(property, f)
     setState(
       prev => {
         const res = Object.assign(
@@ -297,7 +251,7 @@ export function Notebook({api, datasource, show, data}) {
   }
   const addCell = () => {
     const newCellID = uniqid()
-    console.log(newCellID)
+    console.log("new cell", newCellID)
     setState(prev => Object.assign({}, prev, {cells: Object.assign({}, prev.cells, {[newCellID]: {
       "query": "", "result": {}, "position": 1, "id": newCellID
     }})}))
@@ -308,6 +262,7 @@ export function Notebook({api, datasource, show, data}) {
   }, [data, datasource])
   console.log('state@Notebook', state)
   console.log('data@notebook', data)
+  const cells = Object.values(state.cells)
   if(!show) return <span />
   return (
     <div>
@@ -319,7 +274,7 @@ export function Notebook({api, datasource, show, data}) {
         datasource={state.datasource_id}
       />
       <div className=''>
-        {Object.values(state.cells).map((cell, idx) => <NotebookCell 
+        {cells.map((cell, idx) => <NotebookCell 
           api={api}
           datasource={state.datasource_id}
           cell={cell}
@@ -327,14 +282,20 @@ export function Notebook({api, datasource, show, data}) {
           setQuery={updateCell(cell, 'query')}
           setResult={updateCell(cell, 'result')}
           setStyle={updateCell(cell, 'style')}
-          onCtrlEnter={idx >= state.cells.length - 1 ? addCell : () => {}}
+          onRun={() => {
+            console.log("Add cell? Ctrl-Enter", idx, cells.length - 1)
+            if(idx >= cells.length - 1) {
+              console.log("Auto add cell")
+              addCell()
+            }
+          }}
         />)}
       </div>
     </div>
   )
 }
 
-
+//{idx >= state.cells.length - 1 ? addCell : () => {}}
 /*
 saveNotebook={() => {
           api.userdata.notebooks.write(Object.assign({}, state, {cells: Object.values(state.cells)}))
