@@ -178,14 +178,15 @@ export function NotebookHeader({datasource, datasources, addCell, onPublish}) {
 }
 
 
-function NotebookCellStatusBar({isComputing, columns, setVisualizationStyle}) {
-  const cols = columns || []
+function NotebookCellStatusBar({isComputing, cell, setVisualizationStyle}) {
+  const cols = cell?.result?.columns || []
   const progressVisibility = isComputing ? '' : ' invisible '
   return (
     <div className='bg-slate-50 flex items-center rounded-lg px-4 py-2 justify-between'>
       <div className='flex items-center'>
         <svg className={"animate-spin h-6 w-6 mr-3" + progressVisibility} viewBox="0 0 24 24" >
-          <path d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25"/><path d="M10.72,19.9a8,8,0,0,1-6.5-9.79A7.77,7.77,0,0,1,10.4,4.16a8,8,0,0,1,9.49,6.52A1.54,1.54,0,0,0,21.38,12h.13a1.37,1.37,0,0,0,1.38-1.54,11,11,0,1,0-12.7,12.39A1.54,1.54,0,0,0,12,21.34h0A1.47,1.47,0,0,0,10.72,19.9Z" />
+          <path d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25"/>
+          <path d="M10.72,19.9a8,8,0,0,1-6.5-9.79A7.77,7.77,0,0,1,10.4,4.16a8,8,0,0,1,9.49,6.52A1.54,1.54,0,0,0,21.38,12h.13a1.37,1.37,0,0,0,1.38-1.54,11,11,0,1,0-12.7,12.39A1.54,1.54,0,0,0,12,21.34h0A1.47,1.47,0,0,0,10.72,19.9Z" />
         </svg>
         <span>
           0.3s
@@ -194,7 +195,7 @@ function NotebookCellStatusBar({isComputing, columns, setVisualizationStyle}) {
       <div className='flex-grow flex items-center'>
         <div className='basis-1/3'>
           <Dropdown 
-            selected={null}
+            selected={{id: cell?.style?.type, name: cell?.style?.type}}
             setSelected={(s) => setVisualizationStyle({type: s.id})}
             items={[{id: 'table', name: 'Table'}, {id: 'bar', name: 'Bar'}]}
           /> 
@@ -202,10 +203,20 @@ function NotebookCellStatusBar({isComputing, columns, setVisualizationStyle}) {
         <div className='basis-2/3'>
           <ChartOptions name="Options">
             <div>
-              <Dropdown name="X axis" items={cols.map(c => ({id: c, name: c}))} />
+              <Dropdown 
+                name="X axis" 
+                selected={{id: cell?.style?.options?.x, name: cell?.style?.options?.x}}
+                items={cols.map(c => ({id: c, name: c}))} 
+                setSelected={(s) => setVisualizationStyle({options: {x: s.id, y: cell?.style?.options?.y}})} 
+              />
             </div>
             <div>
-              <Dropdown name="Y axis" items={cols.map(c => ({id: c, name: c}))} />
+              <Dropdown 
+                name="Y axis" 
+                selected={{id: cell?.style?.options?.y, name: cell?.style?.options?.y}}
+                items={cols.map(c => ({id: c, name: c}))} 
+                setSelected={(s) => setVisualizationStyle({options: {x: cell?.style?.options?.x, y: s.id}})} 
+              />
             </div>
           </ChartOptions>
         </div>
@@ -253,17 +264,21 @@ function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onR
       />
       <NotebookCellStatusBar 
         isComputing={state.isComputing}
-        setVisualizationStyle={setStyle}
-        columns={cell?.result?.columns}
-        setStyleOptions={() => {}}
+        setVisualizationStyle={(newStyle) => setStyle(Object.assign({}, cell?.style, newStyle))}
+        cell={cell} 
       />
-      {cell.result.columns && ((cell.style && cell.style.type === 'table' )) && <Table 
-        columns={cell.result.columns} 
-        rows={cell.result.rows}
-      />}
-      {cell.result.columns && ((cell.style && cell.style.type === 'bar' )) && <Chart 
-        data={chartData.reverse()}
-      />}
+      {cell.result.columns && ((cell.style && cell.style.type === 'table' )) && (
+        <Table 
+          columns={cell.result.columns} 
+          rows={cell.result.rows}
+        />
+      )}
+      {cell.result.columns && ((cell.style && cell.style.type === 'bar' )) && (
+        <Chart 
+          data={chartData.reverse()}
+          axes={cell?.style?.options}
+        />
+      )}
       {cell.result.error && <span>{JSON.stringify(cell?.result?.error)}</span>}
     </CellContainer>
   )
@@ -316,17 +331,19 @@ export function Notebook({api, datasource, show, data}) {
         datasource={state.datasource_id}
       />
       <div className=''>
-        {cells.map((cell, idx) => <NotebookCell 
-          api={api}
-          datasource={state.datasource_id}
-          cell={cell}
-          setCell={() => {}}
-          setQuery={updateCell(cell, 'query')}
-          setResult={updateCell(cell, 'result')}
-          setStyle={updateCell(cell, 'style')}
-          onRun={idx >= cells.length - 1 ? addCell : () => {}}
-          publishNotebook={publishNotebook}
-        />)}
+        {cells.map((cell, idx) => (
+          <NotebookCell 
+            api={api}
+            datasource={state.datasource_id}
+            cell={cell}
+            setCell={() => {}}
+            setQuery={updateCell(cell, 'query')}
+            setResult={updateCell(cell, 'result')}
+            setStyle={updateCell(cell, 'style')}
+            onRun={idx >= cells.length - 1 ? addCell : () => {}}
+            publishNotebook={publishNotebook}
+          />
+        ))}
       </div>
     </div>
   )
