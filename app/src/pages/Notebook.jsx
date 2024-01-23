@@ -17,6 +17,7 @@ import {
 import { Menu, Transition } from '@headlessui/react'
 import Dropdown from '../components/Dropdown'
 import Chart from '../components/Chart'
+import ChartOptions from '../components/contextual/ChartOptions'
 function execSql(api, query, datasource, onSuccess, onError) {
   console.log(query, datasource, {"query": query, datasource_id: datasource})
   api.post('/query', {"query": query, datasource_id: datasource}, {
@@ -177,7 +178,8 @@ export function NotebookHeader({datasource, datasources, addCell, onPublish}) {
 }
 
 
-function NotebookCellStatusBar({isComputing, setVisualizationStyle}) {
+function NotebookCellStatusBar({isComputing, columns, setVisualizationStyle}) {
+  const cols = columns || []
   const progressVisibility = isComputing ? '' : ' invisible '
   return (
     <div className='bg-slate-50 flex items-center rounded-lg px-4 py-2 justify-between'>
@@ -189,16 +191,33 @@ function NotebookCellStatusBar({isComputing, setVisualizationStyle}) {
           0.3s
         </span>
       </div>
-      <div className='basis-1/4'>
-        <Dropdown 
-          selected={null}
-          setSelected={(s) => setVisualizationStyle({type: s.id})}
-          items={[{id: 'table', name: 'Table'}, {id: 'line', name: 'Line'}]}
-        /> 
+      <div className='flex-grow flex items-center'>
+        <div className='basis-1/3'>
+          <Dropdown 
+            selected={null}
+            setSelected={(s) => setVisualizationStyle({type: s.id})}
+            items={[{id: 'table', name: 'Table'}, {id: 'bar', name: 'Bar'}]}
+          /> 
+        </div>
+        <div className='basis-2/3'>
+          <ChartOptions name="Options">
+            <div>
+              <Dropdown name="X axis" items={cols.map(c => ({id: c, name: c}))} />
+            </div>
+            <div>
+              <Dropdown name="Y axis" items={cols.map(c => ({id: c, name: c}))} />
+            </div>
+          </ChartOptions>
+        </div>
       </div>
     </div>
   )
 }
+
+/*
+
+            
+*/
 
 function CellContainer({children}) {
   return (
@@ -235,12 +254,14 @@ function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onR
       <NotebookCellStatusBar 
         isComputing={state.isComputing}
         setVisualizationStyle={setStyle}
+        columns={cell?.result?.columns}
+        setStyleOptions={() => {}}
       />
       {cell.result.columns && ((cell.style && cell.style.type === 'table' )) && <Table 
         columns={cell.result.columns} 
         rows={cell.result.rows}
       />}
-      {cell.result.columns && ((cell.style && cell.style.type === 'line' )) && <Chart 
+      {cell.result.columns && ((cell.style && cell.style.type === 'bar' )) && <Chart 
         data={chartData.reverse()}
       />}
       {cell.result.error && <span>{JSON.stringify(cell?.result?.error)}</span>}
