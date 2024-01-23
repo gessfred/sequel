@@ -200,9 +200,10 @@ function CellContainer({children}) {
   )
 }
 
-function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onRun}) {
+function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onRun, publishNotebook}) {
   const [state, setState] = useState({isComputing: false})
   const onQueryResult = res => {
+    publishNotebook()
     setResult(res)
     setState({isComputing: false})
   }
@@ -289,6 +290,7 @@ export function Notebook({api, datasource, show, data}) {
           setResult={updateCell(cell, 'result')}
           setStyle={updateCell(cell, 'style')}
           onRun={idx >= cells.length - 1 ? addCell : () => {}}
+          publishNotebook={publishNotebook}
         />)}
       </div>
     </div>
