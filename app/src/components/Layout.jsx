@@ -264,7 +264,7 @@ export default function Layout({children, setMainPage, onSecondMenuChange}) {
         </div>
 
         <main className="py-10 lg:pl-72">
-          <div className="px-4 sm:px-6 lg:px-8 px-2">{children}</div>
+          <div className="px-4 sm:px-6 lg:px-8 px-2 py-8">{children}</div>
         </main>
       </div>
     </>

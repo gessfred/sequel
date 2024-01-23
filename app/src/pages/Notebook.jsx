@@ -177,14 +177,25 @@ export function NotebookHeader({datasource, datasources, addCell, onPublish}) {
 }
 
 
-function NotebookCellStatusBar({isComputing}) {
+function NotebookCellStatusBar({isComputing, setVisualizationStyle}) {
+  const progressVisibility = isComputing ? '' : ' invisible '
   return (
-    <div>
-      {isComputing && (
-        <svg className={"animate-spin h-6 w-6 mr-3"} viewBox="0 0 24 24">
+    <div className='bg-slate-50 flex items-center rounded-lg px-4 py-2 justify-between'>
+      <div className='flex items-center'>
+        <svg className={"animate-spin h-6 w-6 mr-3" + progressVisibility} viewBox="0 0 24 24" >
           <path d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25"/><path d="M10.72,19.9a8,8,0,0,1-6.5-9.79A7.77,7.77,0,0,1,10.4,4.16a8,8,0,0,1,9.49,6.52A1.54,1.54,0,0,0,21.38,12h.13a1.37,1.37,0,0,0,1.38-1.54,11,11,0,1,0-12.7,12.39A1.54,1.54,0,0,0,12,21.34h0A1.47,1.47,0,0,0,10.72,19.9Z" />
         </svg>
-      )}
+        <span>
+          0.3s
+        </span>
+      </div>
+      <div className='basis-1/4'>
+        <Dropdown 
+          selected={null}
+          setSelected={(s) => setVisualizationStyle({type: s.id})}
+          items={[{id: 'table', name: 'Table'}, {id: 'line', name: 'Line'}]}
+        /> 
+      </div>
     </div>
   )
 }
@@ -202,11 +213,13 @@ function CellContainer({children}) {
 
 function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onRun, publishNotebook}) {
   const [state, setState] = useState({isComputing: false})
+  const setStateProperty = value => setState(prev => Object.assign({}, prev, value))
   const onQueryResult = res => {
     publishNotebook()
     setResult(res)
     setState({isComputing: false})
   }
+  console.log(cell.style)
   const chartData = ((cell?.result?.rows) || []).map(row => Object.fromEntries(cell.result.columns.map((column, k) => [column, k > 0 ? Number.parseInt(row[k]) : row[k]])))
   return (
     <CellContainer>
@@ -221,14 +234,15 @@ function NotebookCell({api, datasource, setQuery, setResult, setStyle, cell, onR
       />
       <NotebookCellStatusBar 
         isComputing={state.isComputing}
+        setVisualizationStyle={setStyle}
       />
-      {cell.result.columns && ((cell.style && cell.style.type === 'Table' )|| true) && <Table 
+      {cell.result.columns && ((cell.style && cell.style.type === 'table' )) && <Table 
         columns={cell.result.columns} 
         rows={cell.result.rows}
       />}
-      <Chart 
+      {cell.result.columns && ((cell.style && cell.style.type === 'line' )) && <Chart 
         data={chartData.reverse()}
-      />
+      />}
       {cell.result.error && <span>{JSON.stringify(cell?.result?.error)}</span>}
     </CellContainer>
   )
